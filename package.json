@@ -1,0 +1,29 @@
+{
+  "name": "ultimate-extend",
+  "version": "0.0.4",
+  "description": "Ultimately configurable extend function can be used as always or in any other way you need. Even in objects deep promise iterations.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KROT47/ultimate-extend.git"
+  },
+  "keywords": [
+    "extend"
+  ],
+  "author": "KROT47",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KROT47/ultimate-extend/issues"
+  },
+  "homepage": "https://github.com/KROT47/ultimate-extend#readme",
+  "dependencies": {
+    "abstract-value": "^2.0.1",
+    "get-explicit-type": "^1.0.1"
+  },
+  "devDependencies": {
+    "extend": "^3.0.0"
+  }
+}
