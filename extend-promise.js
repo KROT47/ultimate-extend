@@ -71,13 +71,15 @@ function _ExtendPromise( config, target, options ) {
 	target = target && target.valueOf();
 	options = options && options.valueOf();
 
-	var names = [], optionPromises = [];
+	var option, names = [], optionPromises = [];
 
 	for ( var name in options ) {
-		if ( target[ name ] === options[ name ] ) continue;
+		option = config.getOption( options, name );
+
+		if ( target[ name ] === option ) continue;
 
 		names.push( name );
-		optionPromises.push( Promise.resolve( options[ name ] ) );
+		optionPromises.push( Promise.resolve( option ) );
 	}
 
 	return (
