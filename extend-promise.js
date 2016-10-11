@@ -43,7 +43,7 @@ const ExtendPromiseDefaultConfig = {
  * @return (Promise{Object}) - target
  */
 function ExtendPromise( target ) {
-	return ExtendBase.call( ExtendPromiseDefaultConfig, ...arguments );
+	return ExtendBase.apply( ExtendPromiseDefaultConfig, Array.prototype.slice.call( arguments ) );
 }
 
 
