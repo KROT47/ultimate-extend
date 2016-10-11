@@ -29,7 +29,7 @@ const DefaultConfig = {
 				case 'undefined': return first;
 
 				case 'object':
-					if ( config.deep ) {
+					if ( config.deep && second ) {
 						return config.extend( config, getEmptyObject( second ), second );
 					}
 

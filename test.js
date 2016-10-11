@@ -27,7 +27,7 @@ var runTest = function ( config, target, a, b, expecting ) {
 		`${i}: options object b was changed`
 	);
 
-// console.log('result', result.valueOf(), expecting.result.valueOf());
+console.log('result', result.valueOf(), expecting.result.valueOf());
 	console.assert(
 		sameProps( result.valueOf(), expecting.result.valueOf() ),
 		`${i}: result is incorrect`
@@ -133,6 +133,22 @@ var expecting = {
 	};
 
 runTest( false, Extend.config(), a, b, expecting );
+
+
+/* ------------ 6 ------------- */
+
+var getOptionFunc = ( options, name ) => options;
+
+var a = { a: { a: { a: null, b: 1 } } },
+	b = { a: { a: { b: null } } };
+
+var expecting = {
+		a: clone( a ),
+		b: clone( b ),
+		result: { a: { a: { a: null, b: null } } }
+	};
+
+runTest( true, {}, a, b, expecting );
 
 
 /* ------------ End ------------- */
@@ -275,19 +291,25 @@ runTest( false, a, b, expecting );
 function sameProps( first, second, end ) {
 	var type;
 
-	for ( var i in first ) {
-		type = typeof first[ i ];
+	if ( !first && second ) return false;
 
-		if ( !second ) return false;
+	if ( typeof first === 'object' ) {
+		for ( var i in first ) {
+			type = typeof first[ i ];
 
-		if ( type !== typeof second[ i ] ) return false;
+			if ( !second ) return false;
 
-		if ( type === 'object' ) {
-			if ( !sameProps( first[ i ], second[ i ] ) ) return false;
-			continue;
+			if ( type !== typeof second[ i ] ) return false;
+
+			if ( type === 'object' ) {
+				if ( !sameProps( first[ i ], second[ i ] ) ) return false;
+				continue;
+			}
+
+			if ( first[ i ] !== second[ i ] ) return false;
 		}
-
-		if ( first[ i ] !== second[ i ] ) return false;
+	} else {
+		if ( first !== second ) return false;
 	}
 
 	return end ? true : sameProps( second, first, true );
