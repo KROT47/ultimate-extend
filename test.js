@@ -12,14 +12,26 @@ const Extend = require( './' );
 /* ------------ Preparing ------------- */
 
 var i = 1;
-var runTest = function ( config, a, b, expecting ) {
-	var result = Extend( config, {}, a, b );
-// console.log('a', a, expecting.a);
-	console.assert( sameProps( a, expecting.a ), `${i}: options object a was changed` );
-// console.log('b', b, expecting.b);
-	console.assert( sameProps( b, expecting.b ), `${i}: options object b was changed` );
-// console.log('result', result, expecting.result);
-	console.assert( sameProps( result, expecting.result ), `${i}: result is incorrect` );
+var runTest = function ( config, target, a, b, expecting ) {
+	var result = Extend( config, target, a, b );
+
+// console.log('a', a.valueOf(), expecting.a.valueOf());
+	console.assert(
+		sameProps( a.valueOf(), expecting.a.valueOf() ),
+		`${i}: options object a was changed`
+	);
+
+// console.log('b', b.valueOf(), expecting.b.valueOf());
+	console.assert(
+		sameProps( b.valueOf(), expecting.b.valueOf() ),
+		`${i}: options object b was changed`
+	);
+
+// console.log('result', result.valueOf(), expecting.result.valueOf());
+	console.assert(
+		sameProps( result.valueOf(), expecting.result.valueOf() ),
+		`${i}: result is incorrect`
+	);
 
 	i++;
 }
@@ -45,7 +57,7 @@ var expecting = {
 		result: { a: { a: '1', b: 2 } }
 	};
 
-runTest( config, a, b, expecting );
+runTest( config, {}, a, b, expecting );
 
 
 /* ------------ 2 ------------- */
@@ -64,7 +76,7 @@ var expecting = {
 		result: { a: { a: { b: '1', c: 3 } } }
 	};
 
-runTest( config, a, b, expecting );
+runTest( config, {}, a, b, expecting );
 
 
 /* ------------ 3 ------------- */
@@ -87,7 +99,7 @@ var expecting = {
 		result: { a: { a: { b: [ '1', 3 ] } } }
 	};
 
-runTest( config, a, b, expecting );
+runTest( config, {}, a, b, expecting );
 
 
 /* ------------ 4 ------------- */
@@ -104,7 +116,25 @@ var expecting = {
 		result: { a: { a: { b: [ 3 ] } }, b: { b: 2 } }
 	};
 
-runTest( config, a, b, expecting );
+runTest( config, {}, a, b, expecting );
+
+
+/* ------------ 5 ------------- */
+
+var config = Extend.config();
+
+var getOptionFunc = ( options, name ) => options;
+
+var a = Extend.config({ deep: true }),
+	b = Extend.config({ getOption: getOptionFunc });
+
+var expecting = {
+		a: Extend.config( clone( a ) ),
+		b: Extend.config( clone( b ) ),
+		result: Extend.config({ deep: true, getOption: getOptionFunc })
+	};
+
+runTest( config, Extend.config(), a, b, expecting );
 
 
 /* ------------ End ------------- */
@@ -250,6 +280,8 @@ function sameProps( first, second, end ) {
 	for ( var i in first ) {
 		type = typeof first[ i ];
 
+		if ( !second ) return false;
+
 		if ( type !== typeof second[ i ] ) return false;
 
 		if ( type === 'object' ) {
@@ -263,4 +295,4 @@ function sameProps( first, second, end ) {
 	return end ? true : sameProps( second, first, true );
 }
 
-function clone( obj ) { return DefaultExtend( true, {}, obj ) }
+function clone( obj ) { return DefaultExtend( true, {}, obj.valueOf() ) }

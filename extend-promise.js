@@ -68,6 +68,9 @@ function _ExtendPromise( config, target, options ) {
 		return options.then( options => _ExtendPromise( config, target, options ) );
 	}
 
+	target = target && target.valueOf();
+	options = options && options.valueOf();
+
 	var names = [], optionPromises = [];
 
 	for ( var name in options ) {
