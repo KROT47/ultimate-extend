@@ -121,8 +121,6 @@ runTest( config, {}, a, b, expecting );
 
 /* ------------ 5 ------------- */
 
-var config = Extend.config();
-
 var getOptionFunc = ( options, name ) => options;
 
 var a = Extend.config({ deep: true }),
@@ -134,7 +132,7 @@ var expecting = {
 		result: Extend.config({ deep: true, getOption: getOptionFunc })
 	};
 
-runTest( config, Extend.config(), a, b, expecting );
+runTest( false, Extend.config(), a, b, expecting );
 
 
 /* ------------ End ------------- */

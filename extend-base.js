@@ -27,7 +27,7 @@ module.exports.config = ExtendConfig;
 function ExtendBase( target ) {
 	var i = 1, config, options, targetPromise;
 
-	if ( target instanceof ExtendConfig ) ) {
+	if ( target instanceof ExtendConfig ) {
 		// if both first and second arguments are ExtendConfigs - confusing situation
 		if ( arguments[ i ] instanceof ExtendConfig ) {
 			throw Error( 'Both first and second arguments can not be instances of ExtendConfig. Try to use Boolean as first one.' );
