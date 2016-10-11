@@ -98,7 +98,7 @@ module.exports.defaultConfig = DefaultConfig;
  * @return (Object)
  */
 function GetConfig( config ) {
-	defaultConfig = arguments[ 1 ] || DefaultConfig;
+	const defaultConfig = arguments[ 1 ] || DefaultConfig;
 
 	const newConfig = Object.create( defaultConfig );
 
