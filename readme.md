@@ -61,6 +61,7 @@ var config = Extend.config({
     
     // also you can define extend method which will be used on deeper properties
     // so if deep is true then config.extend will handle next deeper extend iterations
+    // Experimental ( not tested )
     // extend: Extend || Extend.promise || YourFunc
 });
 
