@@ -47,7 +47,7 @@ var config = Extend.config({
 	//      // undefined must be returned to prevent property extension
     // }
     
-    extendConfig: {
+    extendSimilar: {
         Array: ( first, second, config ) => first.concat( second )
         // Object: ( first, second, config ) => ...
         // Function: ( first, second, config ) => ...
@@ -56,10 +56,8 @@ var config = Extend.config({
         //      - here first is target's property and second is some object's property
     }
     
-    // if extendConfig is not enough you may use manual property setting
-    // this function should return new target's or one of its children's property
-    // use it only if really needed
-    // extendProp: ( first, second, config ) => { ... return newTargetProp }
+    // executes when target property and options property have different types
+    // extendDifferent: ( first, second, config ) => { ... return newTargetProp }
     
     // also you can define extend method which will be used on deeper properties
     // so if deep is true then config.extend will handle next deeper extend iterations
