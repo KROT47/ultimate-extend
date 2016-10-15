@@ -47,18 +47,32 @@ var config = Extend.config({
 	//      // undefined must be returned to prevent property extension
     // }
     
+    // config to extend properties with similar types
     extendSimilar: {
-        Array: ( first, second, config ) => first.concat( second )
-        // Object: ( first, second, config ) => ...
-        // Function: ( first, second, config ) => ...
+        Array: ( first, second, config, originalMethod ) => first.concat( second )
+        // Object: ( first, second, config, originalMethod ) => ...
+        // Function: ( first, second, config, originalMethod ) => ...
         // ... any other type replacement
         //      - replacement occures only when both first and second are having the same type
-        //      - here first is target's property and second is some object's property
+        //      - first - target's property
+        //      - second - some object's property ( to extend from )
+        //      - config - current config object
+        //      - originalMethod - method which is defined by default
     }
     
-    // executes when target property and options property have different types
-    // extendDifferent: ( first, second, config ) => { ... return newTargetProp }
+    // executes when first and second properties have different types
+    // extendDifferent: ( first, second, config, originalMethod ) => { ... return newTargetProp }
+
+    // returns original config object ( can not be overwritten )
+    // getOriginal: function () { return ... }
+
+
+    /* ------------ Better Not Touch ------------- */
     
+    // base handler to extend first with second
+    // this handler by default launches extendSimilar() and extendDifferent()
+    // extendProp: ( first, second, config ) => {}    
+
     // also you can define extend method which will be used on deeper properties
     // so if deep is true then config.extend will handle next deeper extend iterations
     // Experimental ( not tested )

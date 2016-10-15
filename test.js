@@ -27,7 +27,7 @@ var runTest = function ( config, target, a, b, expecting ) {
 		`${i}: options object b was changed`
 	);
 
-console.log('result', result.valueOf(), expecting.result.valueOf());
+// console.log('result', result.valueOf(), expecting.result.valueOf());
 	console.assert(
 		sameProps( result.valueOf(), expecting.result.valueOf() ),
 		`${i}: result is incorrect`
@@ -85,7 +85,7 @@ var config = Extend.config({
 		deep: true,
 
 		extendSimilar: {
-			Array: ( first, second, config ) => first.concat( second )
+			Array: ( first, second, config, originalMethod ) => first.concat( second )
 		}
 	});
 

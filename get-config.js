@@ -62,15 +62,25 @@ const DefaultConfig = {
 		 * @return (Mixed)
 		 */
 		extendProp: ( first, second, config ) => {
-			var type = GetType( second ), extendMethod;
+			var type = GetType( second ),
+				originalConfig = config.getOriginal(),
+				originalMethod, extendMethod;
 
 			if ( GetType( first ) === type  ) {
 				extendMethod = config.extendSimilar[ type ] || config.extendSimilar.default;
+
+				originalMethod =
+					originalConfig && (
+						originalConfig.extendSimilar[ type ]
+						|| originalConfig.extendSimilar.default
+					);
 			} else {
 				extendMethod = config.extendDifferent;
+
+				originalMethod = originalConfig && originalConfig.extendDifferent;
 			}
 
-			return extendMethod( first, second, config );
+			return extendMethod( first, second, config, originalMethod );
 		},
 
 
@@ -81,6 +91,16 @@ const DefaultConfig = {
 		 */
 		extend: () => undefinedMethod( 'extend' )
 	};
+
+Object.defineProperties( DefaultConfig, {
+	/**
+	 * Returns original config
+	 * @return (Object|false)
+	 */
+	getOriginal: {
+		value: function () { return this.__proto__ !== DefaultConfig && this.__proto__ }
+	}
+});
 
 
 /* --------------------------------- Module Exports --------------------------------- */
