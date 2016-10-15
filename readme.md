@@ -66,12 +66,13 @@ var config = Extend.config({
     // returns original config object ( can not be overwritten )
     // getOriginal: function () { return ... }
 
-
-    /* ------------ Better Not Touch ------------- */
-    
     // base handler to extend first with second
-    // this handler by default launches extendSimilar() and extendDifferent()
-    // extendProp: ( first, second, config ) => {}    
+    // use it in extendSimilar if you might receive new value type to extend it as needed by config
+    // e.g. extendSimilar: {
+    //   // here first and second functions can return any type
+    //   Function: ( first, second, config ) => config.extendProp( first(), second(), config )
+    // }
+    // extendProp: ( first, second, config ) => {}
 
     // also you can define extend method which will be used on deeper properties
     // so if deep is true then config.extend will handle next deeper extend iterations
