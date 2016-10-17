@@ -69,7 +69,7 @@ function _Extend( config, target, options ) {
 		option = config.getOption( options, name );
 
 		target[ name ] =
-			config.extendProp( target[ name ], option, config );
+			config.extendProp( target[ name ], option, config, name );
 	}
 }
 

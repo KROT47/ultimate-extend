@@ -85,7 +85,7 @@ var config = Extend.config({
 		deep: true,
 
 		extendSimilar: {
-			Array: ( first, second, config, originalMethod ) => first.concat( second )
+			Array: ( first, second, config, name, originalMethod ) => first.concat( second )
 		}
 	});
 
@@ -149,6 +149,33 @@ var expecting = {
 	};
 
 runTest( true, {}, a, b, expecting );
+
+
+/* ------------ 7 ------------- */
+
+var config = Extend.config({
+		deep: true,
+
+		extendSimilar: {
+			Array: ( first, second, config, name, originalMethod ) => {
+				var arr = first.concat( second );
+				arr.push( name, originalMethod( first, second, config, name ) );
+				return arr;
+			}
+		}
+	});
+
+var a = { a: [ '1' ] };
+
+var b = { a: [ 3 ] };
+
+var expecting = {
+		a: clone( a ),
+		b: clone( b ),
+		result: { a: [ '1', 3, 'a', [ 3 ] ] }
+	};
+
+runTest( config, {}, a, b, expecting );
 
 
 /* ------------ End ------------- */

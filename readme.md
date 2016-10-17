@@ -49,7 +49,7 @@ var config = Extend.config({
     
     // config to extend properties with similar types
     extendSimilar: {
-        Array: ( first, second, config, originalMethod ) => first.concat( second )
+        Array: ( first, second, config, name, originalMethod ) => first.concat( second )
         // Object: ( first, second, config, originalMethod ) => ...
         // Function: ( first, second, config, originalMethod ) => ...
         // ... any other type replacement
@@ -57,11 +57,12 @@ var config = Extend.config({
         //      - first - target's property
         //      - second - some object's property ( to extend from )
         //      - config - current config object
+        //      - name - current extending property name
         //      - originalMethod - method which is defined by default
     }
     
     // executes when first and second properties have different types
-    // extendDifferent: ( first, second, config, originalMethod ) => { ... return newTargetProp }
+    // extendDifferent: ( first, second, config, name, originalMethod ) => { return newTargetProp }
 
     // returns original config object ( can not be overwritten )
     // getOriginal: function () { return ... }

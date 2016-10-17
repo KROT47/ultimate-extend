@@ -22,9 +22,10 @@ const DefaultConfig = {
 		 * @param (Mixed) first - property value from first object
 		 * @param (Mixed) second - property value from second object
 		 * @param (Object) config - extend config
+		 * @param (String|Number) name - current extending property name
 		 * @return (Mixed)
 		 */
-		extendDifferent: ( first, second, config ) => {
+		extendDifferent: ( first, second, config, name ) => {
 			switch ( typeof second ) {
 				case 'undefined': return first;
 
@@ -40,28 +41,29 @@ const DefaultConfig = {
 		// handlers to define new property if object properties types are similar
 		extendSimilar: {
 			// Array and Object will be extended too if config.deep is true
-			Object:  ( first, second, config ) => {
+			Object:  ( first, second, config, name ) => {
 				return config.deep ?
 						config.extend( config, {}, first, second ) :
-						config.extendSimilar.default( first, second, config );
+						config.extendSimilar.default( first, second, config, name );
 			},
-			Array:  ( first, second, config ) => {
+			Array:  ( first, second, config, name ) => {
 				return config.deep ?
 						config.extend( config, [], first, second ) :
-						config.extendSimilar.default( first, second, config );
+						config.extendSimilar.default( first, second, config, name );
 			},
 			// if simple values - first will be replaced with second
-			default: ( first, second, config ) => second
+			default: ( first, second, config, name ) => second
 		},
 
 		/**
 		 * Returns new target property
-		 * @param (Mixed) first
-		 * @param (Mixed) second
+		 * @param (Mixed) first - target current property
+		 * @param (Mixed) second - extend object current property
 		 * @param (Object) config
+		 * @param (String|Number) name - current extending property name
 		 * @return (Mixed)
 		 */
-		extendProp: ( first, second, config ) => {
+		extendProp: ( first, second, config, name ) => {
 			var type = GetType( second ),
 				originalConfig = config.getOriginal(),
 				originalMethod, extendMethod;
@@ -80,7 +82,7 @@ const DefaultConfig = {
 				originalMethod = originalConfig && originalConfig.extendDifferent;
 			}
 
-			return extendMethod( first, second, config, originalMethod );
+			return extendMethod( first, second, config, name, originalMethod );
 		},
 
 
@@ -98,7 +100,8 @@ Object.defineProperties( DefaultConfig, {
 	 * @return (Object|false)
 	 */
 	getOriginal: {
-		value: function () { return this.__proto__ !== DefaultConfig && this.__proto__ }
+		value: function () { return this.__proto__ !== DefaultConfig && this.__proto__ },
+		enumerable: true
 	}
 });
 

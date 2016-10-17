@@ -91,7 +91,7 @@ function _ExtendPromise( config, target, options ) {
 				for ( var i = results.length; i--; ) {
 					let name = names[ i ];
 
-					result = config.extendProp( target[ name ], results[ i ], config );
+					result = config.extendProp( target[ name ], results[ i ], config, name );
 
 					if ( result instanceof Promise ) {
 						promises.push( result.then( result => ( target[ name ] = result ) ) );
