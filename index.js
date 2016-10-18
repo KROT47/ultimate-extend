@@ -62,8 +62,10 @@ function ExtendStart( config, target, i, args ) {
 function _Extend( config, target, options ) {
 	var option, name;
 
-	target = target && target.valueOf();
-	options = options && options.valueOf();
+	if ( !target || !options ) return target;
+
+	if ( typeof target.valueOf === 'function' ) target = target.valueOf();
+	if ( typeof options.valueOf === 'function' ) options = options.valueOf();
 
 	for ( name in options ) {
 		option = config.getOption( options, name );
