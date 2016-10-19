@@ -12,26 +12,36 @@ const Extend = require( './' );
 /* ------------ Preparing ------------- */
 
 var i = 1;
-var runTest = function ( config, target, a, b, expecting ) {
+var runTest = function ( config, target, a, b, expecting, func ) {
 	var result = Extend( config, target, a, b );
+
+	a = a.valueOf();
+	b = b.valueOf();
+	result = result.valueOf();
 
 // console.log('a', a.valueOf(), expecting.a.valueOf());
 	console.assert(
-		sameProps( a.valueOf(), expecting.a.valueOf() ),
+		sameProps( a, expecting.a.valueOf() ),
 		`${i}: options object a was changed`
 	);
 
 // console.log('b', b.valueOf(), expecting.b.valueOf());
 	console.assert(
-		sameProps( b.valueOf(), expecting.b.valueOf() ),
+		sameProps( b, expecting.b.valueOf() ),
 		`${i}: options object b was changed`
 	);
 
 // console.log('result', result.valueOf(), expecting.result.valueOf());
 	console.assert(
-		sameProps( result.valueOf(), expecting.result.valueOf() ),
+		sameProps( result, expecting.result.valueOf() ),
 		`${i}: result is incorrect`
 	);
+
+	if ( typeof func === 'function' ) {
+		var funcResult = func( result );
+
+		console.assert( typeof funcResult === 'boolean', `${i}: ${funcResult}` );
+	}
 
 	i++;
 }
@@ -176,6 +186,31 @@ var expecting = {
 	};
 
 runTest( config, {}, a, b, expecting );
+
+
+/* ------------ 8 ------------- */
+
+var config = Extend.config({
+		deep: true
+	});
+
+var cache = { a: 2 };
+
+var target = { cache: cache };
+
+var a = { cache: { b: 3 } };
+
+var b = { a: [ 3 ] };
+
+var expecting = {
+		a: clone( a ),
+		b: clone( b ),
+		result: { a: [ 3 ], cache: { a: 2, b: 3 } }
+	};
+
+runTest( config, target, a, b, expecting, result => {
+	return result.cache === cache || 'target inner object got replaced';
+});
 
 
 /* ------------ End ------------- */

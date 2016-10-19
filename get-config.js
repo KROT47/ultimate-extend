@@ -43,12 +43,12 @@ const DefaultConfig = {
 			// Array and Object will be extended too if config.deep is true
 			Object:  ( first, second, config, name ) => {
 				return config.deep ?
-						config.extend( config, {}, first, second ) :
+						config.extend( config, first, second ) :
 						config.extendSimilar.default( first, second, config, name );
 			},
 			Array:  ( first, second, config, name ) => {
 				return config.deep ?
-						config.extend( config, [], first, second ) :
+						config.extend( config, first, second ) :
 						config.extendSimilar.default( first, second, config, name );
 			},
 			// if simple values - first will be replaced with second
