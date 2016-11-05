@@ -106,15 +106,6 @@ const DefaultConfig = {
 
 Object.defineProperties( DefaultConfig, {
 	/**
-	 * Returns original config
-	 * @return (Object|false)
-	 */
-	getOriginal: {
-		value: function () { return this.__proto__ !== DefaultConfig && this.__proto__ },
-		enumerable: true
-	},
-
-	/**
 	 * Returns current extend level ( useful if deep is true )
 	 * @return (Object|false)
 	 */
@@ -146,6 +137,17 @@ function GetConfig( config ) {
 	const newConfig = Object.create( defaultConfig );
 
 	simpleExtend( newConfig, config );
+
+	Object.defineProperties( newConfig, {
+		/**
+		 * Returns original config
+		 * @return (Object)
+		 */
+		getOriginal: {
+			value: function () { return defaultConfig },
+			enumerable: true
+		}
+	});
 
 	return newConfig;
 }

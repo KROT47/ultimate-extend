@@ -52,13 +52,11 @@ function ExtendBase( target ) {
 		target = {};
 	}
 
-	if ( config ) {
-		if ( !config._finalExtendConfigState ) {
-			config = GetConfig( config, this.defaultConfig );
-			Object.defineProperty( config, '_finalExtendConfigState', { value: true } );
-		}
-	} else {
-		config = this.defaultConfig;
+	if ( !config ) config = {};
+
+	if ( !config._finalExtendConfigState ) {
+		config = GetConfig( config, this.defaultConfig );
+		Object.defineProperty( config, '_finalExtendConfigState', { value: true } );
 	}
 
 	return this.extend( config, target, i, arguments );

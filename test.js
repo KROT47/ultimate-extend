@@ -168,6 +168,7 @@ var config = Extend.config({
 
 		extendSimilar: {
 			Array: ( first, second, config, name, originalMethod ) => {
+// console.log( first, second, config, name, originalMethod );
 				var arr = first.concat( second );
 				arr.push( name, originalMethod( first, second, config, name ) );
 				return arr;
