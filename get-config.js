@@ -42,14 +42,24 @@ const DefaultConfig = {
 		extendSimilar: {
 			// Array and Object will be extended too if config.deep is true
 			Object:  ( first, second, config, name ) => {
-				return config.deep ?
-						config.extend( config, first, second ) :
-						config.extendSimilar.default( first, second, config, name );
+				if ( config.deep ) {
+					config = Object.create( config );
+					config.level = config.level + 1;
+
+					return config.extend( config, first, second );
+				}
+
+				return config.extendSimilar.default( first, second, config, name );
 			},
 			Array:  ( first, second, config, name ) => {
-				return config.deep ?
-						config.extend( config, first, second ) :
-						config.extendSimilar.default( first, second, config, name );
+				if ( config.deep ) {
+					config = Object.create( config );
+					config.level = config.level + 1;
+
+					return config.extend( config, first, second );
+				}
+
+				return config.extendSimilar.default( first, second, config, name );
 			},
 			// if simple values - first will be replaced with second
 			default: ( first, second, config, name ) => second
@@ -101,6 +111,16 @@ Object.defineProperties( DefaultConfig, {
 	 */
 	getOriginal: {
 		value: function () { return this.__proto__ !== DefaultConfig && this.__proto__ },
+		enumerable: true
+	},
+
+	/**
+	 * Returns current extend level ( useful if deep is true )
+	 * @return (Object|false)
+	 */
+	level: {
+		get: function () { return this._level || 0 },
+		set: function ( value ) { this._level = value },
 		enumerable: true
 	}
 });

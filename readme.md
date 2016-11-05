@@ -57,6 +57,7 @@ var config = Extend.config({
         //      - first - target's property
         //      - second - some object's property ( to extend from )
         //      - config - current config object
+        //          - config.level - current deep extend level
         //      - name - current extending property name
         //      - originalMethod - method which is defined by default
     }
