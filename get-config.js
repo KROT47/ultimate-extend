@@ -42,24 +42,14 @@ const DefaultConfig = {
 		extendSimilar: {
 			// Array and Object will be extended too if config.deep is true
 			Object:  ( first, second, config, name ) => {
-				if ( config.deep ) {
-					config = Object.create( config );
-					config.level = config.level + 1;
-
-					return config.extend( config, first, second );
-				}
-
-				return config.extendSimilar.default( first, second, config, name );
+				return config.deep ?
+					config.extend( config, first, second ) :
+					config.extendSimilar.default( first, second, config, name );
 			},
 			Array:  ( first, second, config, name ) => {
-				if ( config.deep ) {
-					config = Object.create( config );
-					config.level = config.level + 1;
-
-					return config.extend( config, first, second );
-				}
-
-				return config.extendSimilar.default( first, second, config, name );
+				return config.deep ?
+					config.extend( config, first, second ) :
+					config.extendSimilar.default( first, second, config, name );
 			},
 			// if simple values - first will be replaced with second
 			default: ( first, second, config, name ) => second
@@ -80,6 +70,11 @@ const DefaultConfig = {
 
 			if ( GetType( first ) === type  ) {
 				extendMethod = config.extendSimilar[ type ] || config.extendSimilar.default;
+
+				if ( typeof second === 'object' ) {
+					config = Object.create( config );
+					config.level = config.level + 1;
+				}
 
 				originalMethod =
 					originalConfig && (
