@@ -20,6 +20,16 @@ module.exports.promise = ExtendPromise;
 module.exports.config = ExtendBase.config;
 
 
+/* --------------------------------- Required Modules --------------------------------- */
+
+const ExtendOuter = require( './extend-outer' );
+
+
+/* --------------------------------- Module Exports --------------------------------- */
+
+module.exports.outer = ExtendOuter;
+
+
 /* --------------------------------- Config --------------------------------- */
 
 const ExtendDefaultConfig = {

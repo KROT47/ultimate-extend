@@ -51,6 +51,12 @@ function ExtendPromise( target ) {
 
 // Extends target with each options object
 function _ExtendPromiseStart( config, target, i, args ) {
+	if ( target instanceof Promise ) {
+		return (
+			target.then( target => _ExtendPromiseStart( config, target, i, args ) )
+		);
+	};
+
 	var targetPromise = _ExtendPromise( config, target, args[ i++ ] );
 
 	for ( ; i < args.length; ++i ) {

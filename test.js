@@ -12,8 +12,10 @@ const Extend = require( './' );
 /* ------------ Preparing ------------- */
 
 var i = 1;
-var runTest = function ( config, target, a, b, expecting, func ) {
-	var result = Extend( config, target, a, b );
+var runTest = function ( config, target, a, b, expecting, func, extend ) {
+	extend = extend || Extend;
+
+	var result = extend( config, target, a, b );
 
 	a = a.valueOf();
 	b = b.valueOf();
@@ -213,6 +215,31 @@ runTest( config, target, a, b, expecting, result => {
 });
 
 
+/* ------------ 9 ------------- */
+
+var config = Extend.config({
+		deep: true,
+
+		extendSimilar: {
+			Array: ( first, second, config ) => first.concat( second )
+		}
+	});
+
+var target = [ 0, 1 ];
+
+var a = [ 2, 3 ];
+
+var b = [ 4, 5 ];
+
+var expecting = {
+		a: clone( a ),
+		b: clone( b ),
+		result: [ 0, 1, 2, 3, 4, 5 ]
+	};
+
+runTest( config, target, a, b, expecting, null, Extend.outer );
+
+
 /* ------------ End ------------- */
 
 console.log( 'Extend: All Good!!!');
@@ -227,11 +254,11 @@ console.log( 'Extend: All Good!!!');
 /* ------------ Preparing ------------- */
 
 var i = 0, k = 0;
-runTest = function ( config, a, b, expecting ) {
+runTest = function ( config, target, a, b, expecting ) {
 	k++;
 	let j = ++i;
 
-	Extend.promise( config, {}, a, b )
+	Extend.promise( config, target, a, b )
 		.then( result => {
 			try {
 // console.log(j, 'a', a, expecting.a);
@@ -284,7 +311,7 @@ var expecting = {
 		result: { a: { a: '1', b: { c: { d: { e: { f: { g: 30 } } } } } } }
 	};
 
-runTest( config, a, b, expecting );
+runTest( config, {}, a, b, expecting );
 
 
 /* ------------ 2 ------------- */
@@ -298,7 +325,7 @@ var expecting = {
 		result: { a: { a: [ 2 ], b: 2 } }
 	};
 
-runTest( true, a, b, expecting );
+runTest( true, {}, a, b, expecting );
 
 
 /* ------------ 3 ------------- */
@@ -322,7 +349,7 @@ var expecting = {
 		result: { a: { a: [ [ '1' ] ] } }
 	};
 
-runTest( true, a, b, expecting );
+runTest( true, {}, a, b, expecting );
 
 
 /* ------------ 4 ------------- */
@@ -346,7 +373,34 @@ var expecting = {
 		result: { a: {} }
 	};
 
-runTest( false, a, b, expecting );
+runTest( false, {}, a, b, expecting );
+
+
+/* ------------ 5 ------------- */
+
+// var config = Extend.config({
+// 		deep: true,
+
+// 		extend: Extend.outer,
+
+// 		extendSimilar: {
+// 			Array: ( first, second, config ) => first.concat( second )
+// 		}
+// 	});
+
+// var target = Promise.resolve( [ 0, 1 ] );
+
+// var a = Promise.resolve( [ 2, 3 ] );
+
+// var b = Promise.resolve( [ 4, 5 ] );
+
+// var expecting = {
+// 		a: a,
+// 		b: b,
+// 		result: [ 0, 1, 2, 3, 4, 5 ]
+// 	};
+
+// runTest( config, target, a, b, expecting );
 
 /* --------------------------------- Helpers --------------------------------- */
 
@@ -377,4 +431,4 @@ function sameProps( first, second, end ) {
 	return end ? true : sameProps( second, first, true );
 }
 
-function clone( obj ) { return DefaultExtend( true, {}, obj.valueOf() ) }
+function clone( obj ) { return DefaultExtend( true, Array.isArray( obj ) ? [] : {}, obj.valueOf() ) }

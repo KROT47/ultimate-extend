@@ -10,9 +10,12 @@ Extends target with other object's properties. Works like 'extend' module, but h
 
 // UltimateExtend( [{config|Boolean,ExtendConfig}, ]{target|Object,Function}, ...{options|Object,Function} ) => {Object}
 
+// UltimateExtend.outer( [{config|Boolean,ExtendConfig}, ] ...{options|Object,Function} ) => {Object}
+
 // UltimateExtend.promise( [{config|Boolean,ExtendConfig}, ]{target|Object,Function}, ...{options|Object,Function} ) => {Promise{Object}}
 
 // UltimateExtend.config( {config|Object} ) => {ExtendConfig}
+
 
 
 /* --------------------------------- Extend --------------------------------- */
@@ -28,7 +31,6 @@ Extend( true, target, a, b ); // working as expected
 
 console.log( target ); // => { a: { a: [ 2 ], b: 2 } }
 
-
 /* ------------ Advanced usage ------------- */
 
 var config = Extend.config({
@@ -40,11 +42,11 @@ var config = Extend.config({
     // e.g. to extend only from all properties with name beginning with underscore, like '_test':
     // getOption: ( options, name ) => {
     //      if ( name.match( /^_/ )
-	//			|| options[ name ] && typeof options[ name ] === 'object'
-	//		) {
-	//			return options[ name ];
-	//		}
-	//      // undefined must be returned to prevent property extension
+    //          || options[ name ] && typeof options[ name ] === 'object'
+    //      ) {
+    //          return options[ name ];
+    //      }
+    //      // undefined must be returned to prevent property extension
     // }
     
     // config to extend properties with similar types
@@ -87,6 +89,32 @@ var target = {}; // renew target; a, b are taken from example above
 Extend( config, target, a, b ); // now all arrays are concatenated instead of extending
 
 console.log( target ); // => { a: { a: [ '1', 2 ], b: 2 } }
+
+
+/* --------------------------------- Extend.outer --------------------------------- */
+// Extend.outer extends two variables as if they were in extending objects
+var Extend = require( 'ultimate-extend' );
+
+var config = Extend.config({
+    extendSimilar: {
+        Array: ( first, second ) => first.concat( second )
+    },
+
+    extendDifferent: ( first, second, config, name, baseMethod ) => {
+        if ( !first ) return baseMethod( first, second, config );
+
+        if ( !Array.isArray( first ) ) first = [ first ];
+        if ( !Array.isArray( second ) ) second = [ second ];
+
+        return config.extendProp( first, second, config );
+    }
+});
+
+var a = [ 0, 1 ],
+    b = 2;
+
+Extend.outer( config, a, b )                                  => [ 0, 1, 2 ]
+( Extend( config, {}, { outer: a }, { outer: b } ) ).outer    => [ 0, 1, 2 ]
 
 
 /* --------------------------------- Extend.promise --------------------------------- */
