@@ -84,9 +84,8 @@ function _ExtendPromise( config, target, options ) {
 	for ( var name in options ) {
 		option = config.getOption( options, name );
 
-		if ( target[ name ] === option ) continue;
-
 		names.push( name );
+
 		optionPromises.push( Promise.resolve( option ) );
 	}
 
