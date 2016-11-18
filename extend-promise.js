@@ -82,7 +82,7 @@ function _ExtendPromise( config, target, options ) {
 	var option, names = [], optionPromises = [];
 
 	for ( var name in options ) {
-		option = config.getOption( options, name );
+		option = config.getOption( options, name, config );
 
 		names.push( name );
 

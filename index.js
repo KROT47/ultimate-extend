@@ -78,7 +78,7 @@ function _Extend( config, target, options ) {
 	if ( typeof options.valueOf === 'function' ) options = options.valueOf();
 
 	for ( name in options ) {
-		option = config.getOption( options, name );
+		option = config.getOption( options, name, config );
 
 		target[ name ] =
 			config.extendProp( target[ name ], option, config, name );

@@ -133,7 +133,7 @@ runTest( config, {}, a, b, expecting );
 
 /* ------------ 5 ------------- */
 
-var getOptionFunc = ( options, name ) => options;
+var getOptionFunc = ( options, name, config ) => options;
 
 var a = Extend.config({ deep: true }),
 	b = Extend.config({ getOption: getOptionFunc });
@@ -149,7 +149,7 @@ runTest( false, Extend.config(), a, b, expecting );
 
 /* ------------ 6 ------------- */
 
-var getOptionFunc = ( options, name ) => options;
+var getOptionFunc = ( options, name, config ) => options;
 
 var a = { a: { a: { a: null, b: 1 } } },
 	b = { a: { a: { b: null } } };
