@@ -64,7 +64,6 @@ const DefaultConfig = {
 		 * @return (Mixed)
 		 */
 		extendProp: ( first, second, config, name ) => {
-console.log('<><><><><><><>',first, second, name, config.level);
 			var type = GetType( second ),
 				originalConfig = config.getOriginal(),
 				originalMethod, extendMethod;
