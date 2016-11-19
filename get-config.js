@@ -31,7 +31,7 @@ const DefaultConfig = {
 
 				case 'object':
 					if ( config.deep && second ) {
-						return config.extend( config, getEmptyObject( second ), second );
+						return config.extend( config._goDeeper(), getEmptyObject( second ), second );
 					}
 
 				default: return second;
@@ -64,6 +64,7 @@ const DefaultConfig = {
 		 * @return (Mixed)
 		 */
 		extendProp: ( first, second, config, name ) => {
+console.log('<><><><><><><>',first, second, name, config.level);
 			var type = GetType( second ),
 				originalConfig = config.getOriginal(),
 				originalMethod, extendMethod;
@@ -71,10 +72,7 @@ const DefaultConfig = {
 			if ( GetType( first ) === type  ) {
 				extendMethod = config.extendSimilar[ type ] || config.extendSimilar.default;
 
-				if ( typeof second === 'object' ) {
-					config = Object.create( config );
-					config.level = config.level + 1;
-				}
+				if ( typeof second === 'object' ) config = config._goDeeper();
 
 				originalMethod =
 					originalConfig && (
@@ -108,6 +106,18 @@ Object.defineProperties( DefaultConfig, {
 		get: function () { return this._level || 0 },
 		set: function ( value ) { this._level = value },
 		enumerable: true
+	},
+
+	/**
+	 * Returns config for deeper extend method
+	 * @return (Object)
+	 */
+	_goDeeper: {
+		value: function () {
+			const config = Object.create( this );
+			config.level++;
+			return config;
+		}
 	}
 });
 
