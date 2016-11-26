@@ -40,7 +40,7 @@ var config = Extend.config({
     // by default returns property from object to extend from by name
     // you can set some special conditions
     // e.g. to extend only from all properties with name beginning with underscore, like '_test':
-    // getOption: ( options, name, config ) => {
+    // getOption: ( options, name, config, target ) => {
     //      if ( name.match( /^_/ )
     //          || options[ name ] && typeof options[ name ] === 'object'
     //      ) {
