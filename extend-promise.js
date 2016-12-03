@@ -6,7 +6,7 @@ const ExtendBase = require( './extend-base' );
 
 const GetConfig = require( './get-config' );
 
-const GetType = require( 'get-explicit-type' );
+const Helpers = require( './helpers' );
 
 
 /* --------------------------------- Module Exports --------------------------------- */
@@ -74,10 +74,12 @@ function _ExtendPromise( config, target, options ) {
 		return options.then( options => _ExtendPromise( config, target, options ) );
 	}
 
-	if ( !target || !options ) return Promise.resolve( target );
+	if ( !target || !options || target === options && !config.extendSelf ) {
+		return Promise.resolve( target );
+	}
 
-	if ( typeof target.valueOf === 'function' ) target = target.valueOf();
-	if ( typeof options.valueOf === 'function' ) options = options.valueOf();
+	target = Helpers.getValueOf( target );
+	options = Helpers.getValueOf( options );
 
 	var option, names = [], optionPromises = [];
 

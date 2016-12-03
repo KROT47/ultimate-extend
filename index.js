@@ -8,7 +8,7 @@ const GetConfig = require( './get-config' );
 
 const ExtendPromise = require( './extend-promise' );
 
-const GetType = require( 'get-explicit-type' );
+const Helpers = require( './helpers' );
 
 
 /* --------------------------------- Module Exports --------------------------------- */
@@ -72,10 +72,10 @@ function ExtendStart( config, target, i, args ) {
 function _Extend( config, target, options ) {
 	var option, name;
 
-	if ( !target || !options ) return target;
+	if ( !target || !options || target === options && !config.extendSelf ) return;
 
-	if ( typeof target.valueOf === 'function' ) target = target.valueOf();
-	if ( typeof options.valueOf === 'function' ) options = options.valueOf();
+	target = Helpers.getValueOf( target );
+	options = Helpers.getValueOf( options );
 
 	for ( name in options ) {
 		option = config.getOption( options, name, config, target );

@@ -1,13 +1,24 @@
 
 /* --------------------------------- Required Modules --------------------------------- */
 
-const GetType = require( 'get-explicit-type' );
+const Helpers = require( './helpers' );
 
 
 /* --------------------------------- Config --------------------------------- */
 
 const DefaultConfig = {
+		/**
+		 * If true then all properties will be deeply extended
+		 * @type (Boolean)
+		 */
 		deep: false,
+
+		/**
+		 * If true then execution will proceed to replace properties from object to itself
+		 * e.g. Extend( deepEquivExtend, obj1, obj1 ) => obj1 will be deeply extended with itself
+		 * @type (Boolean)
+		 */
+		extendSelf: false,
 
 		/**
 		 * Default function to get option by name from options object
@@ -31,7 +42,9 @@ const DefaultConfig = {
 
 				case 'object':
 					if ( config.deep && second ) {
-						return config.extend( config._goDeeper(), getEmptyObject( second ), second );
+						return (
+							config.extend( config._goDeeper(), Helpers.newObject( second ), second )
+						);
 					}
 
 				default: return second;
@@ -64,11 +77,11 @@ const DefaultConfig = {
 		 * @return (Mixed)
 		 */
 		extendProp: ( first, second, config, name ) => {
-			var type = GetType( second ),
+			var type = Helpers.getType( second ),
 				originalConfig = config.getOriginal(),
 				originalMethod, extendMethod;
 
-			if ( GetType( first ) === type  ) {
+			if ( Helpers.getType( first ) === type  ) {
 				extendMethod = config.extendSimilar[ type ] || config.extendSimilar.default;
 
 				originalMethod =
@@ -91,7 +104,7 @@ const DefaultConfig = {
 		/**
 		 * Main Extend function
 		 */
-		extend: () => undefinedMethod( 'extend' )
+		extend: () => Helpers.undefinedMethod( 'extend' )
 	};
 
 Object.defineProperties( DefaultConfig, {
@@ -138,7 +151,7 @@ function GetConfig( config ) {
 
 	const newConfig = Object.create( defaultConfig );
 
-	simpleExtend( newConfig, config );
+	Helpers.simpleExtend( newConfig, config );
 
 	Object.defineProperties( newConfig, {
 		/**
@@ -153,29 +166,3 @@ function GetConfig( config ) {
 
 	return newConfig;
 }
-
-
-/* --------------------------------- Helpers --------------------------------- */
-
-function undefinedMethod( name ) { throw Error( `Extend config method ${name} must be defined` ) }
-
-function simpleExtend( target, obj ) {
-	var type, i, newTarget;
-
-	for ( i in obj ) {
-		type = typeof target[ i ];
-
-		if ( type === typeof obj[ i ] && type === 'object' ) {
-			newTarget = simpleExtend( getEmptyObject( target[ i ] ), target[ i ] );
-
-			target[ i ] = simpleExtend( newTarget, obj[ i ] );
-		} else {
-			target[ i ] = obj[ i ];
-		}
-	}
-
-	return target;
-}
-
-// returns empty array or object ue to obj type
-function getEmptyObject( obj ) { return Array.isArray( obj ) ? [] : {} }

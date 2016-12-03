@@ -36,6 +36,9 @@ console.log( target ); // => { a: { a: [ 2 ], b: 2 } }
 var config = Extend.config({
     // if true: deeper objects will be extended too
     deep: true,
+
+    // if true: allows to extend object with itself
+    extendSelf: false,
     
     // by default returns property from object to extend from by name
     // you can set some special conditions
