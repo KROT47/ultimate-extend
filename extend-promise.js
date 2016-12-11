@@ -18,8 +18,6 @@ module.exports = ExtendPromise;
 
 const baseExtendDifferent = GetConfig.defaultConfig.extendDifferent;
 
-// const baseExtendSimilarObject = GetConfig.defaultConfig.extendSimilar.Object;
-
 const ExtendPromiseDefaultConfig = {
 
 	extend: _ExtendPromiseStart,
@@ -84,7 +82,7 @@ function _ExtendPromise( config, target, options ) {
 	var option, names = [], optionPromises = [];
 
 	for ( var name in options ) {
-		option = config.getOption( options, name, config, target );
+		option = config._launchMethod( 'getOption', [ options, name, config, target ] );
 
 		names.push( name );
 

@@ -37,7 +37,7 @@ var config = Extend.config({
     // if true: deeper objects will be extended too
     deep: true,
 
-    // if true: allows to extend object with itself
+    // if true: allows to extend object with itself ( careful here )
     extendSelf: false,
     
     // by default returns property from object to extend from by name
@@ -54,26 +54,27 @@ var config = Extend.config({
     
     // config to extend properties with similar types
     extendSimilar: {
-        Array: ( first, second, config, name, originalMethod ) => first.concat( second )
-        // Object: ( first, second, config, originalMethod ) => ...
-        // Function: ( first, second, config, originalMethod ) => ...
-        // ... any other type replacement
+        Array: ( first, second, config, name ) => first.concat( second )
+        // Object: ( first, second, config, originMethod ) => ...
+        // Function: ( first, second, config, originMethod ) => ...
+        // ... any other type beginning with capital letter ( see 'get-explicit-type' module )
         //      - replacement occures only when both first and second are having the same type
         //      - first - target's property
         //      - second - some object's property ( to extend from )
         //      - config - current config object
-        //          - config.level - current deep extend level
+        //          - config.useOriginMethod( first, second ) - executes same method from parent config
+        //          - config.newConfig() - creates new ExtendConfig using current one as parent
+        //          - config.level - current deep extend recursion level ( default - 0 )
         //      - name - current extending property name
-        //      - originalMethod - method which is defined by default
     }
     
     // executes when first and second properties have different types
-    // extendDifferent: ( first, second, config, name, originalMethod ) => { return newTargetProp }
+    // extendDifferent: ( first, second, config, name ) => { return newTargetProp }
 
-    // returns original config object ( can not be overwritten )
-    // getOriginal: function () { return ... }
+    // returns parent config object ( can not be overwritten )
+    // getParentConfig()
 
-    // base handler to extend first with second
+    // base handler to extend first with second ( better not override it )
     // use it in extendSimilar if you might receive new value type to extend it as needed by config
     // e.g. extendSimilar: {
     //   // here first and second functions can return any type
@@ -94,7 +95,22 @@ Extend( config, target, a, b ); // now all arrays are concatenated instead of ex
 console.log( target ); // => { a: { a: [ '1', 2 ], b: 2 } }
 
 
+/* --------------------------------- Extend.promise --------------------------------- */
+
+var Extend = require( 'ultimate-extend' );
+
+var target = {},
+    a = { a: { a: Promise.resolve( [ '1' ] ) } },
+    b = { a: { a: [ 2 ], b: new Promise( resolve => setTimeout( () => resolve( 2 ), 500 ) ) } };
+
+Extend.promise( true, target, a, b )
+    .then( () => {
+        console.log( target ); // => { a: { a: [ 2 ], b: 2 } }
+    });
+    
+
 /* --------------------------------- Extend.outer --------------------------------- */
+
 // Extend.outer extends two variables as if they were in extending objects
 var Extend = require( 'ultimate-extend' );
 
@@ -103,8 +119,8 @@ var config = Extend.config({
         Array: ( first, second ) => first.concat( second )
     },
 
-    extendDifferent: ( first, second, config, name, baseMethod ) => {
-        if ( !first ) return baseMethod( first, second, config );
+    extendDifferent: ( first, second, config, name ) => {
+        if ( !first ) return config.useOriginMethod( first, second, config, name );
 
         if ( !Array.isArray( first ) ) first = [ first ];
         if ( !Array.isArray( second ) ) second = [ second ];
@@ -120,16 +136,25 @@ Extend.outer( config, a, b )                                  => [ 0, 1, 2 ]
 ( Extend( config, {}, { outer: a }, { outer: b } ) ).outer    => [ 0, 1, 2 ]
 
 
-/* --------------------------------- Extend.promise --------------------------------- */
+/* --------------------------------- Extend.config --------------------------------- */
+
+// Extend.config can be produced from other configs using config.newConfig( configObj )
+// to execute method from origin ( parent ) config use config.useOriginMethod( ...{ same arguments } )
+// config.useOriginMethod() - here 3rd argument will always be replaced with config which called this method
 
 var Extend = require( 'ultimate-extend' );
 
-var target = {},
-    a = { a: { a: Promise.resolve( [ '1' ] ) } },
-    b = { a: { a: [ 2 ], b: new Promise( resolve => setTimeout( () => resolve( 2 ), 500 ) ) } };
+var config = Extend.config({
+    extendDifferent: ( first, second, config, name ) => {
+        return second + 1;
+    }
+});
 
-Extend.promise( true, target, a, b )
-    .then( () => {
-        console.log( target ); // => { a: { a: [ 2 ], b: 2 } }
-    })
+var newConfig = config.newConfig({
+    extendDifferent: ( first, second, config, name ) => {
+        return config.useOriginMethod( first, second, config, name ) + 2;
+    }
+});
+
+console.log( Extend( newConfig, {}, { a: 1 } ) );  // { a: 4 }
 ```

@@ -10,13 +10,11 @@ module.exports = {
 
 	undefinedMethod,
 
-	simpleExtend,
+	protolessClone,
+
+	setupFullInheritance,
 
 	newObject,
-
-	getComplexObject,
-
-	isComplexObject,
 
 	getValueOf,
 
@@ -28,58 +26,45 @@ module.exports = {
 
 function undefinedMethod( name ) { throw Error( `Extend config method ${name} must be defined` ) }
 
-function simpleExtend( target, obj ) {
-	var type, i, newTarget;
+/**
+ * Setups child and all of its properties to be inherited from parent and its properties
+ * @param (Object) parent
+ * @param (Object) child
+ * @return (Object) - child
+ */
+function setupFullInheritance( parent, child ) {
+	Object.setPrototypeOf( child, parent );
 
-	for ( i in obj ) {
-		type = typeof target[ i ];
-
-		if ( type === typeof obj[ i ] && type === 'object' ) {
-			newTarget = simpleExtend( newObject( target[ i ] ), target[ i ] );
-
-			target[ i ] = simpleExtend( newTarget, obj[ i ] );
-		} else {
-			target[ i ] = obj[ i ];
+	for ( var i in child ) {
+		if ( child.hasOwnProperty( i ) && parent[ i ] && typeof child[ i ] === 'object' ) {
+			Object.setPrototypeOf( child[ i ], parent[ i ] );
 		}
 	}
 
-	return target;
-}
-
-// returns empty array or object ue to obj type
-function newObject( obj, strict ) {
-	if ( strict && typeof obj === 'function' ) {
-		return function () { return obj.apply( this, arguments ) };
-	}
-
-	return Array.isArray( obj ) ? [] : {};
+	return child;
 }
 
 /**
- * Returns obj if it is complex object ( Object, Array, Function )
- * @param (Mixed) obj
- * @return (Object|Array|Function|false)
+ * Creates simple clone of some object without its prototype properties
+ * @param (Object|Array) obj
+ * @param (Boolean) copyHiddenProps - if true - non enumerable props will be copied too
+ * @return (Object|Array)
  */
-function getComplexObject( obj ) {
-	obj = getValueOf( obj );
+function protolessClone( obj, copyHiddenProps ) {
+	const clone = newObject( obj );
+	const props = copyHiddenProps ? Object.getOwnPropertyNames( obj ) : Object.keys( obj );
 
-	return isComplexObject( obj ) && obj;
+	for ( var i = props.length; i--; ) clone[ props[ i ] ] = obj[ props[ i ] ];
+
+	return clone;
 }
 
-/**
- * Tells if obj is complex object
- * @param (Mixed) obj
- * @return (Boolean)
- */
-function isComplexObject( obj ) {
-	const type = typeof obj;
-
-	return type === 'object' || type === 'function';
-}
+// returns empty array or object due to obj type
+function newObject( obj ) { return Array.isArray( obj ) ? [] : {} }
 
 /**
  * Returns value of obj if possible
  * @param (Mixed) obj
  * @return (Mixed)
  */
-function getValueOf( obj ) { return typeof obj.valueOf === 'function' && obj.valueOf() || obj }
+function getValueOf( obj ) { return obj && typeof obj.valueOf === 'function' && obj.valueOf() || obj }

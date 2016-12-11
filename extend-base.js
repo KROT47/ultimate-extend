@@ -1,7 +1,7 @@
 
 /* --------------------------------- Required Modules --------------------------------- */
 
-const AbstractValue = require( 'abstract-value' );
+const ExtendConfig = require( './extend-config' );
 
 const GetConfig = require( './get-config' );
 
@@ -10,9 +10,7 @@ const GetConfig = require( './get-config' );
 
 module.exports = ExtendBase;
 
-const ExtendConfig = AbstractValue( 'ExtendConfig' );
-
-module.exports.config = ExtendConfig;
+module.exports.config = ExtendConfig.factory;
 
 
 /* --------------------------------- ExtendBase --------------------------------- */
@@ -25,7 +23,7 @@ module.exports.config = ExtendConfig;
  * @return (Promise{Object}) - target
  */
 function ExtendBase( target ) {
-	var i = 1, config, options, targetPromise;
+	var i = 1, config, options, targetPromise, type;
 
 	if ( target instanceof ExtendConfig ) {
 		// if both first and second arguments are ExtendConfigs - confusing situation
@@ -41,23 +39,28 @@ function ExtendBase( target ) {
 		config = { deep: target };
 		// skip the boolean and the target
 		target = arguments[ i++ ] || {};
-	} else if ( target && typeof target === 'object' && target._finalExtendConfigState ) {
+	} else if ( target && typeof target === 'object' && target.__isExtendConfig ) {
 		// next iterations of extend
 		config = target;
 		// skip the boolean and the target
 		target = arguments[ i++ ] || {};
 	}
 
-	if ( !target || ( typeof target !== 'object' && typeof target !== 'function' ) ) {
+	if ( !target
+		|| ( ( type = typeof target ) && type !== 'object' && type !== 'function' )
+	) {
 		target = {};
 	}
 
 	if ( !config ) config = {};
 
-	if ( !config._finalExtendConfigState ) {
-		config = GetConfig( config, this.defaultConfig );
-		Object.defineProperty( config, '_finalExtendConfigState', { value: true } );
-	}
+	config = GetConfig.getFinalConfig( config, this.defaultConfig );
 
-	return this.extend( config, target, i, arguments );
+	config._goDeeper();
+
+	const result = this.extend( config, target, i, arguments );
+
+	config._goHigher();
+
+	return result;
 }

@@ -19,15 +19,7 @@ module.exports.promise = ExtendPromise;
 
 module.exports.config = ExtendBase.config;
 
-
-/* --------------------------------- Required Modules --------------------------------- */
-
-const ExtendOuter = require( './extend-outer' );
-
-
-/* --------------------------------- Module Exports --------------------------------- */
-
-module.exports.outer = ExtendOuter;
+module.exports.outer = require( './extend-outer' );
 
 
 /* --------------------------------- Config --------------------------------- */
@@ -78,12 +70,9 @@ function _Extend( config, target, options ) {
 	options = Helpers.getValueOf( options );
 
 	for ( name in options ) {
-		option = config.getOption( options, name, config, target );
+		option = config._launchMethod( 'getOption', [ options, name, config, target ] );
 
 		target[ name ] =
 			config.extendProp( target[ name ], option, config, name );
 	}
 }
-
-
-/* --------------------------------- Helpers --------------------------------- */
