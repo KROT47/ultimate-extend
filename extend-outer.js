@@ -21,10 +21,15 @@ const ExtendOuterDefaultConfig = {
 	extend: ExtendOuterStart,
 
 	defaultConfig: GetConfig({
+
+		extendProp( first, option, name, target, options ) {
+			return ( target[ name ] = this.applyOriginMethod( arguments ) );
+		},
+
 		/**
 		 * Main Extend function
 		 */
-		extend: Extend
+		Extend: Extend
 	})
 };
 
@@ -38,8 +43,8 @@ const ExtendOuterDefaultConfig = {
  * @param (Object?) ...options
  * @return (Promise{Object}) - target
  */
-function ExtendOuter() {
-	return ExtendBase.apply( ExtendOuterDefaultConfig, Array.prototype.slice.call( arguments ) );
+function ExtendOuter( target ) {
+	return ExtendBase.apply( ExtendOuterDefaultConfig, arguments );
 }
 
 
@@ -47,9 +52,11 @@ function ExtendOuter() {
 
 // Extends target with each options object
 function ExtendOuterStart( config, target, i, args ) {
-	args = Array.prototype.slice.call( args, i - 1 ).map( value => ({ outer: value }) );
+	if ( config ) {
+		args = Array.prototype.slice.call( args, i - 1 ).map( value => ({ outer: value }) );
 
-	const result = Extend.apply( null, [ config, {} ].concat( args ) );
+		target = Extend.apply( null, [ config, {} ].concat( args ) ).outer;
+	}
 
-	return result.outer;
+	return target;
 }

@@ -1,12 +1,14 @@
 
 /* --------------------------------- Required Modules --------------------------------- */
 
+const ExtendDecorator = require( './extend-decorator' );
+
 const Helpers = require( './helpers' );
 
 
-/* --------------------------------- Config --------------------------------- */
+/* --------------------------------- DefaultConfig --------------------------------- */
 
-const DefaultConfig = {
+const DefaultConfigObject = {
 		/**
 		 * If true then all properties will be deeply extended
 		 * @type (Boolean)
@@ -21,33 +23,77 @@ const DefaultConfig = {
 		extendSelf: false,
 
 		/**
-		 * Default function to get option by name from options object
-		 * @param (Object) options - object to extend from
-		 * @param (String|Number) name - current extending property name
-		 * @param (Object) config - extend config
-		 * @param (Object) target - object to extend to
-		 * @param (Function?) originMethod - equals to config.__proto__.getOption
+		 * By default ( true ) all decorated properties will be resolved
+		 * If false these properties will be extended with their decorators
+		 * @type (Boolean)
+		 */
+		resolve: true,
+
+		/**
+		 * Default method to get all props to extend
+		 * Also can be used to do smth with objects before each extend
+		 * Context === extendConfig
+		 * @param (Object) options - extension subject
+		 * @param (Object) target - extension object
 		 * @return (Mixed)
 		 */
-		getOption: ( options, name, config, target, originMethod ) => options[ name ],
+		getProps: ( options, target ) => Object.keys( options ),
+
+		/**
+		 * Default method to get target property to extend by name
+		 * Context === extendConfig
+		 * @param (Object) target - extension object
+		 * @param (String|Number) name - current extending property name
+		 * @param (Object) options - extension subject
+		 * @return (Mixed)
+		 */
+		getFirst: ( target, name, options ) => target[ name ],
+
+		/**
+		 * Default method to get option by name from options object
+		 * Context === extendConfig
+		 * @param (Object) options - extension subject
+		 * @param (String|Number) name - current extending property name
+		 * @param (Object) target - extension object
+		 * @return (Mixed)
+		 */
+		getSecond: ( options, name, target ) => options[ name ],
+
+		/**
+		 * Uses config to return new target property
+		 * Context === extendConfig
+		 * Override carefully
+		 * @param (Mixed) first - target property value
+		 * @param (Mixed) second - options property value
+		 * @param (String|Number) name - current extending property name
+		 * @param (Mixed) target - extension object
+		 * @param (Mixed) options - extension subject
+		 * @return (Mixed)
+		 */
+		extendProp( first, second, name, target, options ) {
+			const type = this.getType( second );
+			const extendMethodName =
+				this.getType( first ) === type ? [ type, 'Default' ] : 'extendDifferent';
+
+			return this.applyMethod( extendMethodName, arguments );
+		},
 
 		/**
 		 * Executes if first and second object properties have different types to define new prop
+		 * Context === extendConfig
 		 * @param (Mixed) first - property value from first object
 		 * @param (Mixed) second - property value from second object
-		 * @param (Object) config - extend config
 		 * @param (String|Number) name - current extending property name
-		 * @param (Function?) originMethod - equals to config.__proto__.extendDifferent
 		 * @return (Mixed)
 		 */
-		extendDifferent: ( first, second, config, name, originMethod ) => {
+		extendDifferent( first, second, name, target, options ) {
 			switch ( typeof second ) {
 				case 'undefined': return first;
 
 				case 'object':
-					if ( config.deep && second ) {
+					if ( this.deep && second ) {
 						return (
-							config.extend( config, Helpers.newObject( second ), second )
+							this.extend( Helpers.newObject( second ), second )
 						);
 					}
 
@@ -55,59 +101,55 @@ const DefaultConfig = {
 			}
 		},
 
+		/* --------------------------------- Extend Similar --------------------------------- */
+
 		// handlers to define new property if object properties types are similar
 		// @see extendDifferent for arguments description
-		extendSimilar: {
-			// Array and Object will be extended too if config.deep is true
-			Object: ( first, second, config, name, originMethod ) => {
-				return (
-					config.deep ?
-						config.extend( config, first, second ) :
-						config.extendSimilar.default( first, second, config, name )
-				);
-			},
-			Array: ( first, second, config, name, originMethod ) => {
-				return (
-					config.deep ?
-						config.extend( config, first, second ) :
-						config.extendSimilar.default( first, second, config, name )
-				);
-			},
-			// if simple values - first will be replaced with second
-			default: ( first, second, config, name, originMethod ) => second
+		// Array and Object will be extended too if config.deep is true
+		Object( first, second, name, target, options ) {
+			return (
+				this.deep ?
+					this.extend( first, second ) :
+					this.Default.apply( this, arguments )
+			);
 		},
 
-		/**
-		 * Returns new target property
-		 * @param (Mixed) first - target current property
-		 * @param (Mixed) second - extend object current property
-		 * @param (Object) config
-		 * @param (String|Number) name - current extending property name
-		 * @return (Mixed)
-		 */
-		extendProp: ( first, second, config, name ) => {
-			const type = Helpers.getType( second );
-			const extendMethodName =
-				Helpers.getType( first ) === type ?
-					[ `extendSimilar.${type}`, 'extendSimilar.default' ] :
-					'extendDifferent';
-
-			return config._launchMethod( extendMethodName, [ first, second, config, name ] );
+		Array( first, second, name, target, options ) {
+			return (
+				this.deep ?
+					this.extend( first, second ) :
+					this.Default.apply( this, arguments )
+			);
 		},
 
+		// By default first will be replaced with second
+		Default: ( first, second, name, target, options ) => second,
 
-		/* ------------ Advanced ------------- */
+
+		/* --------------------------------- Advanced --------------------------------- */
 
 		/**
 		 * Main Extend function
 		 */
-		extend: () => Helpers.undefinedMethod( 'extend' )
+		Extend: () => Helpers.undefinedMethod( 'extend' ),
+
+		/**
+		 * Max recursions count
+		 * @type (Number)
+		 */
+		maxRecursions: 20,
 	};
+
+const DefaultConfig = setupExtendConfig( DefaultConfigObject );
 
 
 /* --------------------------------- Final properties --------------------------------- */
 
-Object.defineProperties( DefaultConfig, {
+const DefaultConfigPrototype = {};
+
+Object.setPrototypeOf( DefaultConfig, DefaultConfigPrototype );
+
+Object.defineProperties( DefaultConfigPrototype, {
 
 	/* --------------------------------- Public --------------------------------- */
 
@@ -131,7 +173,88 @@ Object.defineProperties( DefaultConfig, {
 	},
 
 	/**
+	 * Calls defined in config Extend using self as extendConfig
+	 * @return (Mixed)
+	 */
+	extend: {
+		value() {
+			var args = Array.prototype.slice.call( arguments );
+			args.unshift( this );
+
+			return this.Extend.apply( null, args );
+		},
+		enumerable: true
+	},
+
+	/**
+	 * Returns config method by name or first founded for array of names
+	 * @param (String|Array{String}) methodName
+	 * @return (Function)
+	 */
+	getMethod: {
+		value( methodName ) {
+			if ( Array.isArray( methodName ) ) {
+				for ( var i = 0; i < methodName.length; ++i ) {
+					if ( this[ methodName[ i ] ] ) {
+						return this.getMethod( methodName[ i ], true );
+					}
+				}
+
+				throw Error( `Methods '${methodName.join( `' and '` )}' were not found` );
+			}
+
+			const isArray = arguments[ 1 ];
+
+			if ( !isArray && !this[ methodName ] ) {
+				throw Error( `Method '${methodName}' was not found` );
+			}
+
+			return this[ methodName ];
+		},
+		enumerable: true
+	},
+
+	/**
+	 * Executes config method using arguments as first argument
+	 * @param (Arguments|Array) args - all needed arguments for method
+	 * @param (Object|Array) replacements - some replacements to args by index
+	 * @return (Mixed)
+	 * Example: function ( a, b ) {
+	 * 		return this.applyMethod( 'extendProp', arguments, {
+	 * 			1: b === 1 ? 2 : b // here replacement will occur only if b === 1
+	 * 		});
+	 * }
+	 */
+	applyMethod: {
+		value( methodName, args, replacements ) {
+			const method = this.getMethod( methodName );
+
+			for ( var i in replacements ) if ( replacements[ i ] !== args[ i ] ) {
+				args[ i ] = replacements[ i ];
+			}
+
+			return method.apply( this, args );
+		},
+		enumerable: true
+	},
+
+	/**
+	 * Same as useOriginMethod but as first argument receives all arguments for useOriginMethod
+	 * @param (Arguments|Array) args - all needed arguments for useOriginMethod
+	 * @param (Object|Array) replacements - some replacements to args by index
+	 * @return (Mixed)
+	 */
+	applyOriginMethod: {
+		value( args, replacements ) {
+			return this.applyMethod( 'useOriginMethod', args, replacements );
+		},
+		enumerable: true
+	},
+
+	/**
 	 * Launches method with same name from parent config
+	 * Arguments can differ from method to method, see DefaultConfig methods
+	 * @return (Mixed)
 	 */
 	useOriginMethod: {
 		value() {
@@ -139,27 +262,11 @@ Object.defineProperties( DefaultConfig, {
 				throw Error( 'config.useOriginMethod should receive at least two arguments' );
 			}
 
-			const args = Array.prototype.slice.call( arguments );
+			const originConfig = this.getOrigin();
+			const originMethod =
+					originConfig.getMethod([ this._activeExtendMethodName, 'Default' ]);
 
-			// prepare arguments
-			if ( args.length === 2 ) {
-				args.push( this );
-			} else if ( args[ 2 ] !== this ) {
-				args.splice( 2, 1, this );
-			}
-
-			const originLevel = ++this._activeMethodLevel;
-
-			var originConfig = this;
-			var i = 0;
-
-			while ( i++ < originLevel ) originConfig = originConfig.getOrigin();
-
-			const originMethod = originConfig._getMethodByName( this._activeMethodName );
-
-			const result = originMethod.apply( null, args );
-
-			this._activeMethodLevel--;
+			const result = originMethod.apply( this, arguments );
 
 			return result;
 		},
@@ -168,126 +275,139 @@ Object.defineProperties( DefaultConfig, {
 
 	/**
 	 * Returns new config produced from this one
-	 * @param (Object) newConfig - new config
-	 * @param (Boolean) asAutonomousObject
-	 * 		- if true then new final config will be created
-	 * 			with all properties from all final configs chain
-	 * 		- this can be useful to use new config in Promises to prevent early config changes
+	 * @param (Object) newConfig
 	 * @return (Object)
 	 */
 	newConfig: {
-		value( newConfig, asAutonomousObject ) {
-			newConfig = newConfig || {};
+		value( newConfig ) {
+			var result = this.getStatic()._newConfig( newConfig || {} );
 
 			if ( this.__isFinalConfig ) {
-				const config =
-						asAutonomousObject ?
-							GetConfig( this, this.getStatic(), true ) :
-							this._getNewFinal();
+				const finalConfigs = Helpers.getAllProtos( this, proto => proto.__isFinalConfig );
 
-				Object.assign( config, newConfig );
+				finalConfigs.push( {} );
 
-				return config;
+				const finalConfig = Helpers.extendAll.apply( null, finalConfigs.reverse() );
+				const decoratorsConfig = this._getDecoratorsConfig();
+
+				if ( decoratorsConfig ) {
+					result = Helpers.extendAll( Object.create( result ), decoratorsConfig );
+				}
+
+				Object.setPrototypeOf( finalConfig, result );
+
+				return finalConfig;
 			}
 
-			return GetConfig( newConfig, this.getStatic() );
+			return result;
 		},
 		enumerable: true
 	},
 
 	/**
-	 * Returns parent config
+	 * Returns origin extendConfig where extendMethodName is defined
+	 * @param (String|Array?) extendMethodName - currently executing extendMethodName by default
 	 * @return (Object)
 	 */
 	getOrigin: {
-		value() { return Object.getPrototypeOf( this.getStatic() ) },
+		value( extendMethodName ) { return this.getCurrent()._parent },
 		enumerable: true
 	},
 
 	/**
-	 * Returns closest non-final config
+	 * Returns origin extendConfig where extendMethodName is defined
+	 * @param (String|Array?) extendMethodName - currently executing extendMethodName by default
+	 * @return (Object)
+	 */
+	getCurrent: {
+		value( extendMethodName ) {
+			return this._currentMethod ? this._currentMethod._currentConfig : this.getStatic();
+		},
+		enumerable: true
+	},
+
+	/**
+	 * Returns self or closest non-final config
 	 * @return (Object)
 	 */
 	getStatic: {
-		value() { return this.__isFinalConfig ? Object.getPrototypeOf( this ).getStatic() : this },
+		value() { return this.isStatic ? this : this._parent.getStatic() },
+		enumerable: true
+	},
+
+	/**
+	 * Tells if this config is static
+	 * @return (Boolean)
+	 */
+	isStatic: {
+		get() { return !this.__isDecoratorsConfig && !this.__isFinalConfig },
+		enumerable: true
+	},
+
+	/**
+	 * Tells if some object is extend config object
+	 * @param (Mixed) obj
+	 * @return (Boolean)
+	 */
+	isConfig: {
+		value( obj ) { return IsExtendConfigObject( obj ) },
 		enumerable: true
 	},
 
 
 	/* --------------------------------- Private --------------------------------- */
 
+	/* ------------ Getters / Setters ------------- */
+
+	/**
+	 * Returns current config prototype
+	 * @return (Object)
+	 */
+	_parent: { get() { return Object.getPrototypeOf( this ) } },
+
 	/**
 	 * Currently executing method name
-	 * @param (String) methodName
+	 * @param (String|Array) extendMethodName
+	 * @return (String|Array)
 	 */
-	_activeMethodName: {
-		set( methodName ) {
-			Object.defineProperty( this, '__activeMethodName', {
-				value: methodName,
+	_activeExtendMethodName: {
+		set( extendMethodName ) {
+			Object.defineProperty( this, '__activeExtendMethodName', {
+				value: extendMethodName,
 				configurable: true
 			});
 		},
-		get() { return this.__activeMethodName }
+		get() { return this.__activeExtendMethodName }
 	},
 
-	/**
-	 * Currently executing method
-	 * @param (Function) method
-	 */
-	_activeMethodLevel: {
-		set( level ) {
-			Object.defineProperty( this, '__activeMethodLevel', {
-				value: level,
-				configurable: true
-			});
-		},
-		get() { return this.__activeMethodLevel }
-	},
+
+	/* ------------ Methods ------------- */
 
 	/**
-	 * Starts method to extend property
-	 * @param (String) methodName
-	 * @param (Array) args
-	 * @return (Mixed)
+	 * Returns new config produced from this one
+	 * @param (Object) newConfig - new config
+	 * @return (Object)
 	 */
-	_launchMethod: {
-		value( methodName, args ) {
+	_newConfig: {
+		value( config ) {
+			var currConfig = this;
 
-			const method = this._getMethodByName( methodName );
+			const protos = Helpers.getAllProtos( config, proto => proto !== currConfig );
 
-			this._activeMethodName = methodName;
-			this._activeMethodLevel = 0;
+			for ( var i = protos.length; i--; ) {
+				// all protos will be cloned to prevent unexpected mutations of other objects
+				config = setupExtendConfig( config );
 
-			const result = method.apply( null, args );
+				Object.setPrototypeOf( config, currConfig );
 
-			return result;
-		}
-	},
+				// each complex object will become child of existing one in currConfig
+				currConfig = config;
 
-	/**
-	 * Returns method using name
-	 * @param (String|Array) methodName
-	 * @return (Function)
-	 */
-	_getMethodByName: {
-		value( methodName ) {
-			if ( Array.isArray( methodName ) ) {
-				for ( var result, i = 0; i < methodName.length; ++i ) {
-					if ( result = this._getMethodByName( methodName[ i ] ) ) return result;
-				}
-
-				console.log( 'methodName:', methodName );
-				throw Error( 'Method can not be found for such methodName' );
+				// now config object is officially extend config
+				Object.defineProperty( config, '__isExtendConfig', { value: true } );
 			}
 
-			return this._useCache( methodName, () => {
-				const propNames = methodName.split( '.' );
-				var propName, temp = this;
-
-				while ( ( propName = propNames.shift() ) && ( temp = temp[ propName ] ) );
-
-				return temp;
-			});
+			return config;
 		}
 	},
 
@@ -304,7 +424,7 @@ Object.defineProperties( DefaultConfig, {
 	_goHigher: { value() { this.level-- } },
 
 	/**
-	 * Returns cached value or use getter to get it
+	 * Returns current static config cached value or use getter to get it
 	 * @param (String) name
 	 * @param (Function) getter
 	 * @return (Mixed)
@@ -316,13 +436,35 @@ Object.defineProperties( DefaultConfig, {
 	},
 
 	/**
+	 * Returns final config cached value or use getter to get it
+	 * @param (String) name
+	 * @param (Function) getter
+	 * @return (Mixed)
+	 */
+	_useOwnCache: {
+		value( name, getter ) {
+			return this._ownCache[ name ] || ( this._ownCache[ name ] = getter() );
+		}
+	},
+
+	/**
+	 * Returns current static config cache object
+	 * @return (Object)
+	 */
+	_cache: { get() { return this._getCache( this.getCurrent() ) } },
+
+	/**
+	 * Returns final config cache object
+	 * @return (Object)
+	 */
+	_ownCache: { get() { return this._getCache( this ) } },
+
+	/**
 	 * Returns own cache object
 	 * @return (Object)
 	 */
-	_cache: {
-		get() {
-			const cacheOwner = this.getStatic();
-
+	_getCache: {
+		value( cacheOwner ) {
 			if ( !cacheOwner.hasOwnProperty( '__cache' ) ) {
 				Object.defineProperty( cacheOwner, '__cache', { value: {} } );
 			}
@@ -332,40 +474,124 @@ Object.defineProperties( DefaultConfig, {
 	},
 
 	/**
-	 * Returns first final config in prototypes chain
-	 * @return (Object)
-	 */
-	_getBaseFinal: {
-		value() {
-			var config = this;
-
-			while ( !config.hasOwnProperty( '__isFinalConfig' )
-				&& ( config = Object.getPrototypeOf( config ) )
-			);
-
-			return config;
-		}
-	},
-
-	/**
 	 * Returns prepared final config
 	 * @return (Object)
 	 */
 	_getNewFinal: {
 		value() {
-			if ( this.__isFinalConfig ) return Object.create( this );
+			if ( this.__isFinalConfig ) {
+				return Object.create( this, { __state: { value: {} } } );
+			}
 
 			const config = Object.create( this.getStatic() );
 
 			Object.defineProperties( config, {
 				__isFinalConfig: { value: true },
 
+				__state: { value: {} },
+
 				__level: { value: -1, writable: true },
 			});
 
 			return config;
 		}
-	}
+	},
+
+	/**
+	 * Returns array with options object with resolved decorator-functions and new hidden props
+	 * @param (Object) target
+	 * @param (Object) options
+	 * @return (Array)
+	 */
+	_resolveOptions: {
+		value( target, options ) {
+			const final = [ options ];
+
+			if ( !this.resolve ) return final;
+
+			const decConfig = ExtendDecorator.getConfig( options );
+
+			if ( !decConfig ) return final;
+
+			final.push( decConfig );
+
+			const propDecorators = decConfig.decorators;
+			const extendConfigs = decConfig.configs;
+
+			if ( extendConfigs ) final.push( extendConfigs );
+
+			if ( !propDecorators ) return final;
+
+			const resolvedOptions = final[ 0 ] = Helpers.fullClone( options );
+
+			var name, i, decFuncs, result;
+
+			for ( name in propDecorators ) {
+				if ( decFuncs = propDecorators[ name ] ) {
+					result = resolvedOptions[ name ];
+
+					for ( i = decFuncs.length; i--; ) {
+						result = decFuncs[ i ].call( this, result, target, resolvedOptions, name );
+					}
+
+					resolvedOptions[ name ] = result;
+				}
+			}
+
+			return final;
+		}
+	},
+
+	/**
+	 * Returns good filtered props ( system properties will be omitted )
+	 * @param (Object) options
+	 * @param (Object) target
+	 * @param (Object) decConfig
+	 * @return (Array)
+	 */
+	_getProps: {
+		value( options, target, decConfig ) {
+			const props = this.getProps( options, target );
+
+			return ExtendDecorator.filterProps( props, decConfig );
+		}
+	},
+
+	/**
+	 * Returns self or new config using options' decorators configs
+	 * @param (Object) extendConfigs
+	 * @param (String) name
+	 * @return (Object)
+	 */
+	_getConfig: {
+		value( extendConfigs, name ) {
+			if ( !extendConfigs || !extendConfigs[ name ] ) return this;
+
+			return this.newConfig( extendConfigs[ name ] );
+		}
+	},
+
+	/**
+	 * Extends decorators if resolve is false
+	 * @param (Object) target
+	 * @param (Object) options
+	 */
+	_extendDecoratorsConfig: {
+		value( target, options ) {
+			if ( this.resolve ) return;
+
+			ExtendDecorator.updateConfig( target, options );
+		}
+	},
+
+	/**
+	 * Returns self or new config using options' static and decorators configs
+	 * @param (Object) options
+	 * @return (Object)
+	 */
+	_getDecoratorsConfig: {
+		value() { return Helpers.getDeepestProto( this, proto => proto.__isDecoratorsConfig ) }
+	},
 });
 
 
@@ -377,48 +603,33 @@ module.exports.defaultConfig = DefaultConfig;
 
 module.exports.getFinalConfig = GetFinalConfig;
 
+module.exports.isExtendConfigObject = IsExtendConfigObject;
+
 
 /* --------------------------------- GetConfig --------------------------------- */
 
 /**
  * Extends default config with provided
- * @param (Object) config
+ * @param (Object|Array) configs
+ * @param (Object?) protoConfig
  * @return (Object)
  */
-function GetConfig( config ) {
-	const force = arguments[ 2 ];
+function GetConfig( configs, protoConfig ) {
+	config = protoConfig || DefaultConfig;
 
-	if ( !force && config.__isFinalConfig ) return config;
+	if ( !Array.isArray( configs ) ) configs = [ configs ];
 
-	var currConfig = arguments[ 1 ] || DefaultConfig;
+	for ( var i = configs.length; i--; ) {
 
-	if ( !force
-		&& config.hasOwnProperty( '__isExtendConfig' )
-		&& currConfig.isPrototypeOf( config )
-	) {
-		return config;
-	}
+		if ( configs[ i ].hasOwnProperty( '__isExtendConfig' )
+			&& configs[ i ].isPrototypeOf( config )
+			|| configs[ i ].__isFinalConfig
+		) {
+			config = configs[ i ];
+			continue;
+		}
 
-	const protos = [ config ];
-	var i;
-
-	while ( ( config = Object.getPrototypeOf( config ) )
-		&& config !== Object.prototype
-		&& config !== currConfig
-	) {
-		protos.push( config );
-	}
-
-	for ( i = protos.length; i--; ) {
-		// all protos will be cloned to prevent unexpected mutations of other objects
-		config = Helpers.protolessClone( protos[ i ], force );
-
-		// each complex object will become child of existing in currConfig
-		// e.g. extendSimilar
-		currConfig = Helpers.setupFullInheritance( currConfig, config );
-
-		// now this object is officially extend config
-		Object.defineProperty( config, '__isExtendConfig', { value: true } );
+		config = config.newConfig( configs[ i ] );
 	}
 
 	return config;
@@ -437,19 +648,91 @@ function GetFinalConfig( config, defaultConfig ) {
 	return GetConfig( config, defaultConfig )._getNewFinal();
 }
 
+
+/* --------------------------------- IsExtendConfigObject --------------------------------- */
+
+/**
+ * Tells if object is extend config
+ * @param (Object) obj
+ * @return (Boolean)
+ */
+function IsExtendConfigObject( obj ) { return obj && obj.__isExtendConfig }
+
+
+/* --------------------------------- Extend Map --------------------------------- */
+
+/**
+ * Initial extendConfig setup
+ * @param (Object) config
+ * @param (Object) currConfig
+ * @return (Object)
+ */
+function setupExtendConfig( config ) {
+	const result = {};
+
+	for ( var i in config ) {
+		if ( isExtendConfigMethod( config, i ) ) {
+			let extendMethodName = i;
+			let method = config[ i ];
+			let resultMethod =
+					function () {
+						const oldActiveExtendMethodName = this._activeExtendMethodName;
+						this._activeExtendMethodName = extendMethodName;
+
+						const prevMethod = this._currentMethod;
+						this._currentMethod = resultMethod;
+
+						const result = method.apply( this, arguments );
+
+						this._currentMethod = prevMethod;
+
+						this._activeExtendMethodName = oldActiveExtendMethodName;
+
+						return result;
+					};
+
+			resultMethod._currentConfig = result;
+
+			result[ i ] = resultMethod;
+		} else {
+			result[ i ] = config[ i ];
+		}
+	}
+
+	return result;
+}
+
+/* --------------------------------- Helpers --------------------------------- */
+
+/**
+ * Returns true if prop is extendConfig's property
+ * @param (String) propName
+ * @return (Boolean)
+ */
+function isExtendConfigMethod( config, propName ) {
+	return (
+		typeof config[ propName ] === 'function'
+		&& (
+			DefaultConfigObject.hasOwnProperty( propName )
+			|| Helpers.isFirstUpperCased( propName )
+		)
+	);
+}
+
+
 /*
 --------------------------
-| DefaultConfig( Static) |
+| DefaultConfig( Static )|
 --------------------------
 		  |
 		  V
 --------------------------
-| ExtendConfig ( Static) |
+| ExtendConfig ( Static )|
 --------------------------
 		  |
 		  V
 --------------------------
-| UserConfig 1 ( Static) |
+| UserConfig 1 ( Static )|
 --------------------------
 		  |
 		  V
@@ -461,12 +744,12 @@ function GetFinalConfig( config, defaultConfig ) {
 		  |
 		  V
 --------------------------
-| UserConfig N ( Static) |
+| UserConfig N ( Static )|
 --------------------------
 		  |
 		  V
 --------------------------
-| FinalConfig 			 |
+| FinalConfig ( System ) |
 --------------------------
 		  |
 		  V

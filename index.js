@@ -1,5 +1,10 @@
 'use strict';
 
+/* --------------------------------- Module Exports --------------------------------- */
+
+module.exports = Extend;
+
+
 /* --------------------------------- Required Modules --------------------------------- */
 
 const ExtendBase = require( './extend-base' );
@@ -13,11 +18,13 @@ const Helpers = require( './helpers' );
 
 /* --------------------------------- Module Exports --------------------------------- */
 
-module.exports = Extend;
-
 module.exports.promise = ExtendPromise;
 
 module.exports.config = ExtendBase.config;
+
+module.exports.isConfig = ExtendBase.isExtendConfig;
+
+module.exports.decorator = require( './extend-decorator' );
 
 module.exports.outer = require( './extend-outer' );
 
@@ -29,10 +36,15 @@ const ExtendDefaultConfig = {
 	extend: ExtendStart,
 
 	defaultConfig: GetConfig({
+
+		extendProp( first, second, name, target, options ) {
+			return ( target[ name ] = this.applyOriginMethod( arguments ) );
+		},
+
 		/**
 		 * Main Extend function
 		 */
-		extend: Extend
+		Extend: Extend
 	})
 };
 
@@ -46,33 +58,46 @@ const ExtendDefaultConfig = {
  * @param (Object) ...options
  * @return (Promise{Object}) - target
  */
-function Extend( target ) {
-	return ExtendBase.apply( ExtendDefaultConfig, Array.prototype.slice.call( arguments ) );
-}
+function Extend( target ) { return ExtendBase.apply( ExtendDefaultConfig, arguments ) }
 
 
 /* --------------------------------- Private --------------------------------- */
 
 // Extends target with each options object
 function ExtendStart( config, target, i, args ) {
-	for ( ; i < args.length; ++i ) _Extend( config, target, args[ i ] );
+	if ( config ) {
+		const targetValue = Helpers.valueOf( target );
+
+		for ( ; i < args.length; ++i ) _Extend( config, targetValue, args[ i ] );
+	}
 
 	return target;
 }
 
-// extends each prop
+// extends target with one options object
 function _Extend( config, target, options ) {
-	var option, name;
 
 	if ( !target || !options || target === options && !config.extendSelf ) return;
 
-	target = Helpers.getValueOf( target );
-	options = Helpers.getValueOf( options );
+	options = Helpers.valueOf( options );
 
-	for ( name in options ) {
-		option = config._launchMethod( 'getOption', [ options, name, config, target ] );
+	const [ resolvedOptions, decConfig, extendConfigs ] = config._resolveOptions( target, options );
 
-		target[ name ] =
-			config.extendProp( target[ name ], option, config, name );
+	const props = config._getProps( resolvedOptions, target, decConfig );
+
+	var first, second, name, secondConfig, i;
+
+	for ( i = props.length; i--; ) {
+		name = props[ i ];
+
+		secondConfig = config._getConfig( extendConfigs, name );
+
+		first = config.getFirst( target, name, options );
+
+		second = secondConfig.getSecond( resolvedOptions, name, target );
+
+		secondConfig.extendProp( first, second, name, target, options );
 	}
+
+	config._extendDecoratorsConfig( target, options );
 }

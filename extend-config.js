@@ -19,6 +19,8 @@ module.exports = ExtendConfig;
 
 module.exports.factory = ExtendConfigFactory;
 
+module.exports.isExtendConfig = IsExtendConfig;
+
 
 /* --------------------------------- ExtendConfig Factory --------------------------------- */
 
@@ -36,13 +38,37 @@ Object.defineProperties( ExtendConfig.prototype, {
 
 	/**
 	 * Produces new ExtendConfig using this one as ancestor
-	 * @param (Object) config
+	 * @param (Object|ExtendConfig) config
 	 * @return (ExtendConfig)
 	 */
 	newConfig: {
 		value: function ( config ) {
-			return new ExtendConfig( GetConfig( config, this.valueOf() ) );
+			return new ExtendConfig( getArrayOf( config ).concat( getArrayOf( this ) ) );
 		},
 		enumerable: true
 	}
 });
+
+
+/* --------------------------------- IsExtendConfig --------------------------------- */
+
+/**
+ * Tells if an object is ExtencConfig instance
+ * @param (Mixed) obj
+ * @return (Boolean)
+ */
+function IsExtendConfig( obj ) { return obj instanceof ExtendConfig }
+
+
+/* --------------------------------- Helpers --------------------------------- */
+
+/**
+ * Returns array
+ * @param (Mixed)
+ * @return (Array)
+ */
+function getArrayOf( obj ) {
+	obj = Helpers.valueOf( obj );
+
+	return Array.isArray( obj ) ? obj : [ obj ];
+}
