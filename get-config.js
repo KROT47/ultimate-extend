@@ -855,7 +855,7 @@ function setupExtendConfig( config, configType ) {
 	const propDescriptors = {};
 	const props = Object.getOwnPropertyNames( config );
 
-	var descriptor, i, type;
+	var descriptor, i, type, prop;
 
 	for ( i = props.length; i--; ) {
 		prop = props[ i ];

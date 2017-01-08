@@ -7,5 +7,5 @@ module.exports = Object.assign( {},
 
 	require( './asIs' ),
 
-	require( './descriptors' ),
+	require( './descriptors' )
 );
