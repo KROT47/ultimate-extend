@@ -237,6 +237,87 @@ module.exports = ({ assert, log, error }) => ({
 			});
 
 		}
+	}, {
+		/* ------------ 7 ------------- */
+
+		info: 'Extend descriptors complex',
+
+		test( testIndex ) {
+
+			var defDescr = {
+				getSet: {
+					configurable: true,
+					enumerable: true,
+				},
+				value: {
+					configurable: true,
+					writable: true
+					enumerable: true,
+				},
+			};
+
+			function getDescr( descr ) {
+				const type = descr.get || descr.set ? 'getSet' : 'value';
+
+				return Object.assign( {}, defDescr[ type ], descr )
+			}
+
+			var target = {};
+
+			var aProps = {
+				getter: getDescr({ get() { return 'a' } }),
+
+				func: getDescr({ value() { return 'a' } }),
+			};
+
+			var a = {
+				a: Object.create( Object.prototype, aProps ),
+			};
+
+			var bProps = {
+				func: getDescr({ value() { return 'a' } }),
+			};
+
+			var b = {
+				a: Object.create( Object.prototype, bProps ),
+			};
+
+			function getNewFunc( first, second ) {
+				return function newFunc() {
+					const args = Array.prototype.slice.call( arguments );
+
+					// add parentMethod as last argument
+					args.push( () => first.apply( this, arguments ) );
+
+					return second.apply( this, args );
+				}
+			}
+
+			var config = Extend.config({
+				deep: true,
+
+				Function: ( first, second, name ) => getNewFunc( first, second ),
+			});
+
+			var expecting = {
+			    result: {
+					a: Object.create( Object.prototype, {
+						getter: aProps.getter,
+
+						func: getDescr({ value: getNewFunc }),
+					}),
+				}
+			};
+
+			this.run( config, target, a, b, expecting, {
+				extend: Extend.descriptors,
+				assert: ( real, expecting ) => TestHelpers.sameProps( true, real, expecting ),
+				// after( result ) {
+				// 	console.log('>>>',Object.getOwnPropertyDescriptor( result.a, 'd' ));
+				// }
+			});
+
+		}
 	}],
 
 	run( config, target, a, b, expecting, testConfig ) {
