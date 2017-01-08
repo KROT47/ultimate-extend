@@ -26,6 +26,6 @@
   "devDependencies": {
     "babel-plugin-transform-decorators-legacy": "^1.3.4",
     "extend": "^3.0.0",
-    "ultimate-tests": "0.0.4"
+    "ultimate-tests": "^0.0.5"
   }
 }
