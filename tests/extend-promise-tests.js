@@ -124,7 +124,7 @@ module.exports = ({ assert, log, error }) => ({
 
 			var config = configProto.newConfig({
 					Array( first, second ) {
-						return first.concat( second ).concat( this.useOrigin( first, second ) )
+						return first.concat( second ).concat( this.callOrigin( first, second ) )
 					},
 				});
 

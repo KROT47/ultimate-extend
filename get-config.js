@@ -329,14 +329,14 @@ Object.defineProperties( DefaultConfigPrototype, {
 	},
 
 	/**
-	 * Same as useOrigin but as first argument receives all arguments for useOrigin
-	 * @param (Arguments|Array) args - all needed arguments for useOrigin
+	 * Same as callOrigin but as first argument receives all arguments for callOrigin
+	 * @param (Arguments|Array) args - all needed arguments for callOrigin
 	 * @param (Object|Array) replacements - some replacements to args by index
 	 * @return (Mixed)
 	 */
 	applyOrigin: {
 		value( args, replacements ) {
-			return this.applyMethod( 'useOrigin', args, replacements );
+			return this.applyMethod( 'callOrigin', args, replacements );
 		},
 		enumerable: true
 	},
@@ -346,7 +346,7 @@ Object.defineProperties( DefaultConfigPrototype, {
 	 * Arguments can differ from method to method, see DefaultConfig methods
 	 * @return (Mixed)
 	 */
-	useOrigin: {
+	callOrigin: {
 		value() {
 			const originConfig = this.getOrigin();
 			const originPropDescr =

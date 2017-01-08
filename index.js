@@ -1,7 +1,5 @@
 'use strict';
 
-/* --------------------------------- Required Modules --------------------------------- */
-
 
 /* --------------------------------- Module Exports --------------------------------- */
 
@@ -17,6 +15,7 @@ const GetConfig = require( './get-config' );
 const ExtendPromise = require( './extend-promise' );
 
 const Helpers = require( './helpers' );
+
 
 /* --------------------------------- Extend Prototype --------------------------------- */
 

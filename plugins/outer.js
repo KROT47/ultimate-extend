@@ -24,7 +24,7 @@ module.exports = {
 		config = config.newPrimary({
 			level: -2,
 
-			deep() { return this.level === -1 || this.useOrigin() },
+			deep() { return this.level === -1 || this.callOrigin() },
 		});
 
 		return extend( [ config, {}, i - 1, args ], target => target.outer );
