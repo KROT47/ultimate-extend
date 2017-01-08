@@ -9,8 +9,6 @@ const ExtendPromise = module.exports = ExtendPromiseUnbinded.bind( ExtendPromise
 
 const ExtendPrototype = require( './extend-prototype' );
 
-// const ExtendBase = require( './extend-base' );
-
 const GetConfig = require( './get-config' );
 
 const Helpers = require( './helpers' );
@@ -48,29 +46,6 @@ ExtendPromise._defaultConfig = GetConfig({
 
 ExtendPromise._extend = ExtendPromiseStart;
 
-// const ExtendPromiseDefaultConfig = {
-
-// 	extend: ExtendPromiseStart,
-
-// 	defaultConfig: GetConfig({
-
-// 		extendProp( first, second, name, target, options ) {
-// 			const result = this.applyOrigin( arguments );
-
-// 			if ( result instanceof Promise ) {
-// 				return result.then( result => ( target[ name ] = result ) );
-// 			}
-
-// 			return ( target[ name ] = result );
-// 		},
-
-// 		/**
-// 		 * Main Extend function
-// 		 */
-// 		Extend: ExtendPromise
-// 	})
-// };
-
 
 /* --------------------------------- ExtendPromise --------------------------------- */
 
@@ -81,10 +56,6 @@ ExtendPromise._extend = ExtendPromiseStart;
  * @param (Object) ...options
  * @return (Promise{Object}) - target
  */
-// function ExtendPromiseUnbinded( target ) {
-// 	return ExtendBase.apply( ExtendPromiseDefaultConfig, arguments );
-// }
-
 function ExtendPromiseUnbinded( target ) {
 	return ExtendPromise._start.apply( ExtendPromise, arguments );
 }

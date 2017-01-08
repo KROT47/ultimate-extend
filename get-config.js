@@ -138,18 +138,6 @@ const DefaultConfigObject = {
 		Default: ( first, second, name, target, options ) => second,
 
 
-		/* --------------------------------- Events --------------------------------- */
-
-		/**
-		 * Final action for one iteration where result is result of extendProp execution
-		 * @param (Object|Array|Function) target
-		 * @param (String|Number) name
-		 * @param (Mixed) result
-		 * @return ()
-		 */
-		// after( target ) { target.__done = true },
-
-
 		/* --------------------------------- Ending --------------------------------- */
 
 		// defines how target should be returned in the end of all iterations
@@ -161,9 +149,6 @@ const DefaultConfigObject = {
 		 * Main Extend function
 		 */
 		Extend: () => Helpers.undefinedMethod( 'Extend' ),
-// 		Extend() {
-// console.log(Helpers.getAllProtos( this ));
-// 			return Helpers.undefinedMethod( 'Extend' )},
 
 		/**
 		 * Max recursions count
@@ -629,10 +614,7 @@ Object.defineProperties( DefaultConfigPrototype, {
 					i = k;
 				}
 			} else {
-// console.log('-------------------');
-// console.log('currConfig',currConfig.isFinal);
 				currConfig = ConfigTypes[ configType ].newConfig( currConfig );
-// console.log('currConfig',currConfig.isFinal);
 			}
 
 			return currConfig;

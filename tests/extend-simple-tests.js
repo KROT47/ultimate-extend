@@ -259,15 +259,9 @@ module.exports = ({ assert, log, error }) => ({
 
 		    	Object( first, second, name ) {
 		    		var config = this;
-// console.log('<<<',config.isFinal);
-// console.log('<><><>',config.level);
-			    	if ( config.level ) {
-// console.log('-----------------------');
-			    		config = config.newConfig({ test: { test: 2 } });
-// console.log('>>>',config.isFinal);
-// console.log("??", require('../helpers').getAllProtos( config ));
-}
-// console.log('}}}}}');
+
+			    	if ( config.level ) config = config.newConfig({ test: { test: 2 } });
+
 			        return config.applyOrigin( arguments );
 			    },
 

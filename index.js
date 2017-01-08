@@ -105,4 +105,3 @@ function _Extend( config, target, options ) {
 
 	config._extendDecoratorsConfig( target, options );
 }
-// console.log('>>', require('./helpers').getAllProtos( config ));

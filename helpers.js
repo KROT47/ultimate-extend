@@ -105,7 +105,6 @@ function extendAll( target/*, options1, ...*/ ) {
 	for ( i = 1; i < arguments.length; ++i ) if ( typeof arguments[ i ] === 'object' ) {
 		props = Object.getOwnPropertyNames( arguments[ i ] );
 
-		// for ( k = props.length; k--; ) target[ props[ k ] ] = arguments[ i ][ props[ k ] ];
 		for ( k = props.length; k--; ) {
 			descriptors[ props[ k ] ] =
 				Object.getOwnPropertyDescriptor( arguments[ i ], props[ k ]  );

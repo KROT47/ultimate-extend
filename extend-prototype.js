@@ -63,8 +63,7 @@ function SetupPlugins( plugins ) {
 					const pluginFunc =
 							function ( /* user args */ ) {
 								const args = PrepareArguments( arguments, that._defaultConfig );
-// console.log('----------------');
-// console.log(require('./helpers').getAllProtos( args[0] ));
+
 								args.unshift( that._pluginExtend.bind( that ) );
 
 								return plugins[ i ].apply( null, args );
