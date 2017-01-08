@@ -4,7 +4,16 @@ Extends target with other object's properties. Works like 'extend' module, but h
 1. First argument can be of type *Boolean* and also *UltimateExtend.config* ( defines how extend works )
 2. If objects to extend from are Promises or contain promises in properties you can use *Extend.promise* instead of *Extend*. Then it will return promise of Extended object.
 
-**OLD Readme - for now see tests**
+**Installation**
+```bash
+# version 2.x ( alpha )
+npm install ultimate-extend --save
+
+# version 1.x ( stable )
+npm install ultimate-extend@1.0.1 --save
+```
+
+**OLD Readme v1.0.1 - for v2.x see tests**
 **TODO: Update this ReadMe**
 
 
