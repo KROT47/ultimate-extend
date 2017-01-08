@@ -12,14 +12,13 @@ new Tests({
 
 	testNames: {
 		// only: [ 'Extend' ],
-		// only: [ 'Extend.outer' ],
+		// only: [ 'Extend.plugins' ],
 		// only: [ 'Extend.promise' ],
 		// only: [ 'Extend.decorator' ],
 		// except: [ 'Extend.decorator' ],
 		// except: [],
 		// except: [ 'Extend.promise' ],
 	},
-
 
 	defaultConfig: {
 		testIndexes: {
@@ -52,8 +51,8 @@ new Tests({
 			},
 		},
 
-		'Extend.outer': {
-		    file: 'extend-outer-tests',
+		'Extend.plugins': {
+		    file: 'extend-plugins-tests',
 
 		    testIndexes: {
 		        only: [],

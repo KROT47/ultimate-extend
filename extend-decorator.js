@@ -166,6 +166,8 @@ function UpdateConfig( target, options ) {
 	const targetConfig = GetConfig( target );
 	const optionsConfig = GetConfig( options );
 
+	if ( !optionsConfig ) return;
+
 	if ( !targetConfig ) return optionsConfig && SetConfig( target, optionsConfig );
 
 	updateConfig( options, optionsConfig, targetConfig, 'decorators' );

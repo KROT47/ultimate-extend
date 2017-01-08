@@ -1,45 +1,75 @@
 'use strict';
 
+/* --------------------------------- Module Exports --------------------------------- */
+
+const ExtendPromise = module.exports = ExtendPromiseUnbinded.bind( ExtendPromiseUnbinded );
+
+
 /* --------------------------------- Required Modules --------------------------------- */
 
-const ExtendBase = require( './extend-base' );
+const ExtendPrototype = require( './extend-prototype' );
+
+// const ExtendBase = require( './extend-base' );
 
 const GetConfig = require( './get-config' );
 
 const Helpers = require( './helpers' );
 
 
-/* --------------------------------- Module Exports --------------------------------- */
+/* --------------------------------- ExtendPromise Prototype --------------------------------- */
 
-module.exports = ExtendPromise;
+ExtendPromise._pluginExtend = function ( args, callback ) {
+	return this.apply( this, args ).then( callback || defaultCallback );
+};
 
+Object.setPrototypeOf( ExtendPromise, ExtendPrototype );
 
 /* --------------------------------- Config --------------------------------- */
 
-const baseExtendDifferent = GetConfig.defaultConfig.extendDifferent;
+ExtendPromise._defaultConfig = GetConfig({
 
-const ExtendPromiseDefaultConfig = {
+	extendProp( first, second, name, target, options ) {
+		const result = this.applyOrigin( arguments );
 
-	extend: ExtendPromiseStart,
+		if ( result instanceof Promise ) {
+			return result.then( result => ( target[ name ] = result ) );
+		}
 
-	defaultConfig: GetConfig({
+		if ( result === undefined ) return;
 
-		extendProp( first, second, name, target, options ) {
-			const result = this.applyOriginMethod( arguments );
+		return ( target[ name ] = result );
+	},
 
-			if ( result instanceof Promise ) {
-				return result.then( result => ( target[ name ] = result ) );
-			}
+	/**
+	 * Main Extend function
+	 */
+	Extend: ExtendPromise
+}, undefined, 'Base' );
 
-			return ( target[ name ] = result );
-		},
+ExtendPromise._extend = ExtendPromiseStart;
 
-		/**
-		 * Main Extend function
-		 */
-		Extend: ExtendPromise
-	})
-};
+// const ExtendPromiseDefaultConfig = {
+
+// 	extend: ExtendPromiseStart,
+
+// 	defaultConfig: GetConfig({
+
+// 		extendProp( first, second, name, target, options ) {
+// 			const result = this.applyOrigin( arguments );
+
+// 			if ( result instanceof Promise ) {
+// 				return result.then( result => ( target[ name ] = result ) );
+// 			}
+
+// 			return ( target[ name ] = result );
+// 		},
+
+// 		/**
+// 		 * Main Extend function
+// 		 */
+// 		Extend: ExtendPromise
+// 	})
+// };
 
 
 /* --------------------------------- ExtendPromise --------------------------------- */
@@ -51,10 +81,13 @@ const ExtendPromiseDefaultConfig = {
  * @param (Object) ...options
  * @return (Promise{Object}) - target
  */
-function ExtendPromise( target ) {
-	return ExtendBase.apply( ExtendPromiseDefaultConfig, arguments );
-}
+// function ExtendPromiseUnbinded( target ) {
+// 	return ExtendBase.apply( ExtendPromiseDefaultConfig, arguments );
+// }
 
+function ExtendPromiseUnbinded( target ) {
+	return ExtendPromise._start.apply( ExtendPromise, arguments );
+}
 
 /* --------------------------------- Private --------------------------------- */
 
@@ -77,7 +110,7 @@ function ExtendPromiseStart( config, target, i, args ) {
 				.then( () => _ExtendPromise( config._getConfig( options ), targetValue, options ) );
 	}
 
-	return targetPromise.then( () => target );
+	return targetPromise.then( () => config.returnTarget( target ) );
 }
 
 function _ExtendPromise( config, target, options ) {

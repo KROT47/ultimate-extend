@@ -7,6 +7,8 @@ const Extend = require( '../' );
 /* --------------------------------- Decorators --------------------------------- */
 
 const Decorators = {
+		/* ------------ Decorator-Functions ------------- */
+
 		/**
 		 * All decorator-functions will receive these arguments
 		 * @param (Mixed) option - current options[ name ]
@@ -22,8 +24,13 @@ const Decorators = {
 			return option.call( this, target, options, name );
 		},
 
+		/**
+		 * Property will be skipped by extend
+		 */
+		skip( option, target, options, name ) { return undefined },
 
-		/* ------------ Config Extensions ------------- */
+
+		/* ------------ Decorator-Configs ------------- */
 
 		/**
 		 * Extend config will be extended with one or more of these configs
@@ -35,7 +42,7 @@ const Decorators = {
 
 		concat: { Array: ( first, second, name ) => first.concat( second ) },
 
-		concatReverse: { Array: ( first, second, name ) => second.concat( first ) }
+		concatReverse: { Array: ( first, second, name ) => second.concat( first ) },
 	};
 
 
@@ -43,7 +50,10 @@ const Decorators = {
 
 module.exports = setupGetters( Decorators );
 
-module.exports.config = Decorators;
+
+/* ------------ Private ------------- */
+
+module.exports._defaultConfig = Decorators;
 
 
 /* --------------------------------- DecoratorFactory --------------------------------- */

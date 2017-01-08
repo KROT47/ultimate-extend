@@ -9,11 +9,6 @@ const TestHelpers = require( './test-helpers' );
 
 /* --------------------------------- Test Helpers --------------------------------- */
 
-// function deep( option, target, options, name ) {
-// 	const config = this.newConfig({ deep: true });
-
-// 	return config.extend( config, target[ name ], option );
-// }
 const deep = { deep: true };
 const deepExtend = Extend.decorator( deep );
 
@@ -129,7 +124,7 @@ module.exports = ({ assert, log, error }) => ({
 
 			var config = configProto.newConfig({
 					Array( first, second ) {
-						return first.concat( second ).concat( this.useOriginMethod( first, second ) )
+						return first.concat( second ).concat( this.useOrigin( first, second ) )
 					},
 				});
 
@@ -166,10 +161,10 @@ module.exports = ({ assert, log, error }) => ({
 			var expecting = {
 				a: a,
 				b: b,
-			    result: {
-			    	obj1: { a: { b: 2 } },
-			    	obj2: { a: { a: 1, b: 2 } },
-			    },
+				result: {
+					obj1: { a: { b: 2 } },
+					obj2: { a: { a: 1, b: 2 } },
+				},
 			};
 
 			return this.run( false, {}, a, b, expecting );

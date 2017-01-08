@@ -31,19 +31,15 @@ module.exports = ({ assert, log, error }) => ({
 
 		test( testIndex ) {
 
-			var config = Extend.config( {
-			    deep: true
-			} );
-
 			var a = { a: { a: '1' } };
 
-			var b = { a: { b: 2 } };
+			var b = { a: { b: 2 }, b: { c: 3 } };
 
 			var expecting = {
-			    result: { a: { a: '1', b: 2 } }
+			    result: { a: { a: '1', b: 2 }, b: { c: 3 } }
 			};
 
-			this.run( config, {}, a, b, expecting );
+			this.run( true, {}, a, b, expecting );
 		}
 	}, {
 		/* ------------ 3 ------------- */
@@ -142,13 +138,10 @@ module.exports = ({ assert, log, error }) => ({
 			    deep: true,
 
 			    Array( first, second, name ) {
-// console.log('-----------------',1,'-----------------');
 		            var arr = first.concat( second );
 
-// console.log('-----------------',2,'-----------------');
-		            arr.push( name, this.applyOriginMethod( arguments ) );
+		            arr.push( name, this.applyOrigin( arguments ) );
 
-// console.log('-----------------',3,'-----------------');
 		            return arr;
 		        }
 			} );
@@ -194,23 +187,21 @@ module.exports = ({ assert, log, error }) => ({
 		test( testIndex ) {
 			var configProtoProto = Extend.config( {
 			    getSecond( options, name, target ) {
-			        return options[ name ] + this.applyOriginMethod( arguments ) + 1;
+			        return options[ name ] + this.applyOrigin( arguments ) + 1;
 			    }
 			} );
 
 			var configProto = configProtoProto.newConfig({
 			    getSecond( options, name, target ) {
-			        return options[ name ] + this.applyOriginMethod( arguments ) + 2;
+			        return options[ name ] + this.applyOrigin( arguments ) + 2;
 			    }
 			});
 
 			var config = configProto.newConfig({
 			    getSecond( options, name, target ) {
-			        return options[ name ] + this.applyOriginMethod( arguments ) + 3;
+			        return options[ name ] + this.applyOrigin( arguments ) + 3;
 			    }
 			});
-
-			// console.log('>>', config.valueOf());
 
 			var target = {};
 
@@ -259,7 +250,7 @@ module.exports = ({ assert, log, error }) => ({
 				deep: true,
 
 				getSecond( options, name, target ) {
-			    	if ( this.test && this.getType( options[ name ] ) === 'Object' ) {
+			    	if ( this.test && this.helpers.getType( options[ name ] ) === 'Object' ) {
 			    		return Object.assign( {}, options[ name ], this.test );
 			    	}
 
@@ -268,10 +259,16 @@ module.exports = ({ assert, log, error }) => ({
 
 		    	Object( first, second, name ) {
 		    		var config = this;
-
-			    	if ( config.level ) config = config.newConfig({ test: { test: 2 } });
-
-			        return config.applyOriginMethod( arguments );
+// console.log('<<<',config.isFinal);
+// console.log('<><><>',config.level);
+			    	if ( config.level ) {
+// console.log('-----------------------');
+			    		config = config.newConfig({ test: { test: 2 } });
+// console.log('>>>',config.isFinal);
+// console.log("??", require('../helpers').getAllProtos( config ));
+}
+// console.log('}}}}}');
+			        return config.applyOrigin( arguments );
 			    },
 
 			    Array( first, second, name ) {
@@ -305,7 +302,7 @@ module.exports = ({ assert, log, error }) => ({
 
 			var config = configProto.newConfig({
 				String( first, second, name ) {
-		    		return this.applyOriginMethod( arguments, {
+		    		return this.applyOrigin( arguments, {
 		    			1: second === 'b' ? 'a' : second
 		    		});
 			    },
@@ -331,10 +328,10 @@ module.exports = ({ assert, log, error }) => ({
 
 			var test = function ( first, second, name ) {
 				var config = this;
-// console.log(1);
+
 				if ( name === 'events' ) config = config.newConfig({ _isEvent: true });
 
-				return config.applyOriginMethod( arguments );
+				return config.applyOrigin( arguments );
 			};
 
 			var config = Extend.config({
@@ -343,7 +340,7 @@ module.exports = ({ assert, log, error }) => ({
 				Object: test,
 				Array: test,
 
-				Function( first, second, name ) { return this.applyOriginMethod( arguments ) },
+				Function( first, second, name ) { return this.applyOrigin( arguments ) },
 			});
 
 			var target = {};
@@ -366,9 +363,9 @@ module.exports = ({ assert, log, error }) => ({
 
 	run( config, target, a, b, expecting, func ) {
 		// a and b must not change
-
 		expecting.a = expecting.a || TestHelpers.clone( a );
 		expecting.b = expecting.b || TestHelpers.clone( b );
+
 
 		/* ------------ a ------------- */
 

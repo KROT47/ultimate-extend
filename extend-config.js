@@ -26,10 +26,10 @@ module.exports.isExtendConfig = IsExtendConfig;
 
 /**
  * Creates new ExtendConfig instance
- * @param (Object) config
+ * @param (Object|Array|ExtendConfig) config - if Array, first elem becomes top config
  * @return (ExtendConfig)
  */
-function ExtendConfigFactory( config ) { return new ExtendConfig( config ) }
+function ExtendConfigFactory( config ) { return new ExtendConfig( Helpers.valueOf( config ) ) }
 
 
 /* --------------------------------- ExtendConfig Prototype --------------------------------- */

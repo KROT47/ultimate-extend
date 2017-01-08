@@ -62,7 +62,7 @@ var config = Extend.config({
         //      - first - target's property
         //      - second - some object's property ( to extend from )
         //      - config - current config object
-        //          - config.useOriginMethod( first, second ) - executes same method from parent config
+        //          - config.useOrigin( first, second ) - executes same method from parent config
         //          - config.newConfig() - creates new ExtendConfig using current one as parent
         //          - config.level - current deep extend recursion level ( default - 0 )
         //      - name - current extending property name
@@ -120,7 +120,7 @@ var config = Extend.config({
     },
 
     extendDifferent: ( first, second, config, name ) => {
-        if ( !first ) return config.useOriginMethod( first, second, config, name );
+        if ( !first ) return config.useOrigin( first, second, config, name );
 
         if ( !Array.isArray( first ) ) first = [ first ];
         if ( !Array.isArray( second ) ) second = [ second ];
@@ -139,8 +139,8 @@ Extend.outer( config, a, b )                                  => [ 0, 1, 2 ]
 /* --------------------------------- Extend.config --------------------------------- */
 
 // Extend.config can be produced from other configs using config.newConfig( configObj )
-// to execute method from origin ( parent ) config use config.useOriginMethod( ...{ same arguments } )
-// config.useOriginMethod() - here 3rd argument will always be replaced with config which called this method
+// to execute method from origin ( parent ) config use config.useOrigin( ...{ same arguments } )
+// config.useOrigin() - here 3rd argument will always be replaced with config which called this method
 
 var Extend = require( 'ultimate-extend' );
 
@@ -152,7 +152,7 @@ var config = Extend.config({
 
 var newConfig = config.newConfig({
     extendDifferent: ( first, second, config, name ) => {
-        return config.useOriginMethod( first, second, config, name ) + 2;
+        return config.useOrigin( first, second, config, name ) + 2;
     }
 });
 

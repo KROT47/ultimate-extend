@@ -70,10 +70,14 @@ function protolessClone( obj, copyHiddenProps ) {
 /**
  * Creates full nondeep clone with clone of each object in prototypes chain with nonenumerable props
  * @param (Object|Array) obj
+ * @param (Function?) protosCondition - filter for needed protos
  * @return (Object|Array)
  */
-function fullClone( obj ) {
-	const protos = getAllProtos( obj, proto => proto !== Object.prototype );
+function fullClone( obj, protosCondition ) {
+	const protos = getAllProtos( obj, protosCondition );
+
+	if ( !protos.length ) return;
+
 	var clone = protolessClone( protos.pop(), true );
 	var temp;
 
@@ -96,12 +100,19 @@ function fullClone( obj ) {
  */
 function extendAll( target/*, options1, ...*/ ) {
 	var props, i, k;
+	const descriptors = {};
 
-	for ( i = 1; i < arguments.length; ++i ) {
+	for ( i = 1; i < arguments.length; ++i ) if ( typeof arguments[ i ] === 'object' ) {
 		props = Object.getOwnPropertyNames( arguments[ i ] );
 
-		for ( k = props.length; k--; ) target[ props[ k ] ] = arguments[ i ][ props[ k ] ];
+		// for ( k = props.length; k--; ) target[ props[ k ] ] = arguments[ i ][ props[ k ] ];
+		for ( k = props.length; k--; ) {
+			descriptors[ props[ k ] ] =
+				Object.getOwnPropertyDescriptor( arguments[ i ], props[ k ]  );
+		}
 	}
+
+	Object.defineProperties( target, descriptors );
 
 	return target;
 }
@@ -117,7 +128,7 @@ function newObject( obj ) { return Array.isArray( obj ) ? [] : {} }
 function valueOf( obj ) { return obj && typeof obj.valueOf === 'function' && obj.valueOf() || obj }
 
 /**
- * Returns array of prototypes from obj for as long as condition is satisfied
+ * Returns array of prototypes from obj for as long as condition is satisfied in DESC order
  * @param (Mixed) obj
  * @param (Function) condition
  * @return (Array)
@@ -128,7 +139,7 @@ function getAllProtos( obj, condition ) {
 
 	while (
 		( proto = Object.getPrototypeOf( proto ) )
-		&& condition( proto )
+		&& ( !condition || condition( proto ) )
 		&& proto !== Object.prototype
 	) {
 		protos.push( proto );
@@ -164,7 +175,12 @@ function getProto( obj, condition ) {
 function getDeepestProto( obj, condition ) {
 	var proto;
 
-	while( ( proto = Object.getPrototypeOf( obj ) ) && condition( proto ) ) obj = proto;
+	while( ( proto = Object.getPrototypeOf( obj ) )
+		&& ( !condition || condition( proto ) )
+		&& proto !== Object.prototype
+	) {
+		obj = proto;
+	}
 
 	return obj;
 }

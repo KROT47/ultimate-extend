@@ -2,15 +2,17 @@
 
 /* --------------------------------- Required Modules --------------------------------- */
 
-const DefaultExtend = require( 'extend' );
-
 const Extend = require( '../' );
+
+const Helpers = require( '../helpers' );
 
 const TestHelpers = require( './test-helpers' );
 
 const Decorators = require( '../decorators' );
-const { deep, getter, concat, concatReverse } = Decorators;
-const DecoratorsConfig = Decorators.config;
+
+const { deep, getter, skip, concat, concatReverse } = Decorators;
+
+const DecoratorsConfig = Decorators._defaultConfig;
 
 
 /* --------------------------------- Extend Tests --------------------------------- */
@@ -20,56 +22,70 @@ module.exports = ({ assert, log, error, expectError }) => ({
 	tests: [{
 		/* ------------ 1 ------------- */
 
+		info: 'Test Extend.asIs with Extend-decorator generated params',
+
 		test( testIndex ) {
 
 			var a = {
 				@getter
-				str() { return 'test' },
+				str( target, options, name ) { return 'test' },
 
 				@deep
 				@concat
 				arr: [ 1, 2 ],
 			};
 
-			var aDecoratorsExtendConfig = {
+			var aDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
-					decorators: { str: [ DecoratorsConfig.getter ] },
-					configs: { arr: Object.assign( {}, DecoratorsConfig.deep, DecoratorsConfig.concat ) }
+					value: {
+						decorators: { str: [ DecoratorsConfig.getter ] },
+						configs: { arr: Object.assign( {}, DecoratorsConfig.deep, DecoratorsConfig.concat ) }
+					},
+					configurable: true
 				}
-			};
+			});
 
 			var b = {
 				@getter
-				obj() { return {} },
+				obj( target, options, name ) { return {} },
 
 				@concatReverse
 				arr: [ 3, 4 ],
 			};
 
-			var bDecoratorsExtendConfig = {
+			var bDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
-					decorators: { obj: [ DecoratorsConfig.getter ] },
-					configs: { arr: DecoratorsConfig.concatReverse }
+					value: {
+						decorators: { obj: [ DecoratorsConfig.getter ] },
+						configs: { arr: DecoratorsConfig.concatReverse }
+					},
+					configurable: true
 				}
-			};
+			});
 
 			var expecting = {
-				a: DefaultExtend( true, {}, a, aDecoratorsExtendConfig ),
-				b: DefaultExtend( true, {}, b, bDecoratorsExtendConfig ),
-			    result: {
+				a: Helpers.extendAll( {}, a, aDecoratorsExtendConfig ),
+				b: Helpers.extendAll( {}, b, bDecoratorsExtendConfig ),
+			    result: Object.assign( Object.create( Object.prototype, {
+			    	__decoratorsConfig: {
+			    		value: {
+				    		decorators: {
+				    			str: [ DecoratorsConfig.getter ],
+				    			obj: [ DecoratorsConfig.getter ]
+				    		},
+							configs: { arr: DecoratorsConfig.concatReverse }
+						},
+						configurable: true
+			    	}
+			    }), {
 			    	str: a.str,
 			    	obj: b.obj,
 			    	arr: b.arr,
-			    	__decoratorsConfig: {
-			    		decorators: { str: [ DecoratorsConfig.getter ], obj: [ DecoratorsConfig.getter ] },
-						configs: { arr: DecoratorsConfig.concatReverse }
-			    	}
-			    }
+			    })
 			};
 
-			var config = Extend.config({ deep: true, resolve: false });
-
-			this.run( config, {}, a, b, expecting, {
+			this.run( true, {}, a, b, expecting, {
+				extend: Extend.asIs,
 				assert: ( real, expecting ) => TestHelpers.sameProps( true, real, expecting ),
 			});
 		}
@@ -80,7 +96,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			var a = {
 				@getter
-				str() { return 'test' },
+				str( target, options, name ) { return 'test' },
 
 				@concat
 				arr: [ 1, 2 ],
@@ -88,7 +104,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			var b = {
 				@getter
-				obj() { return {} }
+				obj( target, options, name ) { return {} }
 			};
 
 			var expecting = {
@@ -136,18 +152,21 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			var a = {
 				@getter
-				str() { return 'test' },
+				str( target, options, name ) { return 'test' },
 
 				@concat
 				arr: [ 5, 6 ],
 			};
 
-			var aDecoratorsExtendConfig = {
+			var aDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
-					decorators: { str: [ DecoratorsConfig.getter ] },
-					configs: { arr: DecoratorsConfig.concat }
+					value: {
+						decorators: { str: [ DecoratorsConfig.getter ] },
+						configs: { arr: DecoratorsConfig.concat }
+					},
+					configurable: true
 				}
-			};
+			});
 
 			var b = {
 				str() { return 'test' },
@@ -156,25 +175,32 @@ module.exports = ({ assert, log, error, expectError }) => ({
 				arr: [ 1, 2 ],
 			};
 
-			var bDecoratorsExtendConfig = {
+			var bDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
-					configs: { arr: DecoratorsConfig.concatReverse }
+					value: {
+						configs: { arr: DecoratorsConfig.concatReverse }
+					},
+					configurable: true
 				}
-			};
+			});
 
 			// first extending configs with decorators to get final config
 			var config = Extend.config({ deep: true, resolve: false });
 
 			var expecting = {
-				a: DefaultExtend( true, {}, a, aDecoratorsExtendConfig ),
-				b: DefaultExtend( true, {}, b, bDecoratorsExtendConfig ),
-			    result: {
+				a: Helpers.extendAll( {}, a, aDecoratorsExtendConfig ),
+				b: Helpers.extendAll( {}, b, bDecoratorsExtendConfig ),
+				result: Object.assign( Object.create( Object.prototype, {
+			    	__decoratorsConfig: {
+			    		value: {
+				    		configs: { arr: DecoratorsConfig.concatReverse }
+						},
+						configurable: true
+			    	}
+			    }), {
 			    	str: b.str,
 			    	arr: [ 1, 2 ],
-			    	__decoratorsConfig: {
-						configs: { arr: DecoratorsConfig.concatReverse }
-			    	}
-			    },
+			    })
 			};
 
 			this.run( config, {}, a, b, expecting, {
@@ -208,11 +234,11 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			var b = {
 				@getter
-				obj1() { return { a: { b: 2 } } },
+				obj1( target, options, name ) { return { a: { b: 2 } } },
 
 				@getter
 				@deep
-				obj2() { return { a: { b: 2 } } },
+				obj2( target, options, name ) { return { a: { b: 2 } } },
 			};
 
 			var expecting = {
@@ -308,6 +334,71 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			this.run( config, {}, a, b, expecting );
 		}
+	}, {
+		/* ------------ 9 ------------- */
+
+		info: 'Test for correct extending as-is',
+
+		test( testIndex ) {
+
+			var a = {
+				@concat
+				arr: [ 1, 2 ]
+			};
+
+			var b = { str: 'asd' };
+
+			var expecting = {
+				a: a,
+				b: b,
+			    result: {
+			    	arr: [ 1, 2 ],
+			    	str: 'asd'
+			    },
+			};
+
+			var config = Extend.config({
+				resolve: false
+			});
+
+			this.run( config, {}, a, b, expecting );
+		}
+	}, {
+		/* ------------ 10 ------------- */
+
+		info: 'Check for correctness of getter arguments',
+
+		test( testIndex ) {
+
+			var a = {
+				obj1: { a: { a: 1 } },
+
+				obj2: { a: { a: 1 } },
+			};
+
+			var b = {
+				@getter
+				obj1( target, options, name ) { return options.k },
+
+				@getter
+				@deep
+				obj2( target, options, name ) { return options.k },
+
+				@skip
+				k: { a: { b: 2 } },
+			};
+
+			var expecting = {
+				a: a,
+				b: b,
+			    result: {
+			    	obj1: { a: { b: 2 } },
+			    	obj2: { a: { a: 1, b: 2 } },
+			    },
+			};
+
+			this.run( false, {}, a, b, expecting );
+		}
 	}],
 
 
@@ -315,11 +406,12 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 	run( config, target, a, b, expecting, testConfig ) {
 		const testDefaultConfig = {
+			extend: Extend,
 			assert: ( real, expecting ) => TestHelpers.sameProps( real, expecting ),
 			after: null, // result => {}
 		};
 
-		testConfig = DefaultExtend( true, {}, testDefaultConfig, testConfig );
+		testConfig = Helpers.extendAll( {}, testDefaultConfig, testConfig );
 
 		// a and b must not change
 		expecting.a = expecting.a || TestHelpers.clone( a );
@@ -347,8 +439,8 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 		var result =
 				config === undefined ?
-					Extend( target, a, b ) :
-					Extend( config, target, a, b );
+					testConfig.extend( target, a, b ) :
+					testConfig.extend( config, target, a, b );
 
     	result = TestHelpers.valueOf( result );
 

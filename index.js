@@ -1,13 +1,16 @@
 'use strict';
 
+/* --------------------------------- Required Modules --------------------------------- */
+
+
 /* --------------------------------- Module Exports --------------------------------- */
 
-module.exports = Extend;
+const Extend = module.exports = ExtendUnbinded.bind( ExtendUnbinded );
 
 
 /* --------------------------------- Required Modules --------------------------------- */
 
-const ExtendBase = require( './extend-base' );
+const ExtendPrototype = require( './extend-prototype' );
 
 const GetConfig = require( './get-config' );
 
@@ -15,38 +18,42 @@ const ExtendPromise = require( './extend-promise' );
 
 const Helpers = require( './helpers' );
 
+/* --------------------------------- Extend Prototype --------------------------------- */
+
+Object.setPrototypeOf( Extend, ExtendPrototype );
+
 
 /* --------------------------------- Module Exports --------------------------------- */
 
 module.exports.promise = ExtendPromise;
 
-module.exports.config = ExtendBase.config;
+module.exports.config = ExtendPrototype.config;
 
-module.exports.isConfig = ExtendBase.isExtendConfig;
+module.exports.isConfig = ExtendPrototype.isExtendConfig;
 
 module.exports.decorator = require( './extend-decorator' );
-
-module.exports.outer = require( './extend-outer' );
 
 
 /* --------------------------------- Config --------------------------------- */
 
-const ExtendDefaultConfig = {
+Extend._defaultConfig = GetConfig({
 
-	extend: ExtendStart,
+	extendProp( first, second, name, target, options ) {
+		const result = this.applyOrigin( arguments );
 
-	defaultConfig: GetConfig({
+		if ( result === undefined ) return;
 
-		extendProp( first, second, name, target, options ) {
-			return ( target[ name ] = this.applyOriginMethod( arguments ) );
-		},
+		return ( target[ name ] = result );
+	},
 
-		/**
-		 * Main Extend function
-		 */
-		Extend: Extend
-	})
-};
+	/**
+	 * Main Extend function
+	 */
+	Extend: Extend
+}, undefined, 'Base' );
+
+
+Extend._extend = ExtendStart;
 
 
 /* --------------------------------- Extend --------------------------------- */
@@ -58,20 +65,18 @@ const ExtendDefaultConfig = {
  * @param (Object) ...options
  * @return (Promise{Object}) - target
  */
-function Extend( target ) { return ExtendBase.apply( ExtendDefaultConfig, arguments ) }
+function ExtendUnbinded( target ) { return Extend._start.apply( Extend, arguments ) }
 
 
 /* --------------------------------- Private --------------------------------- */
 
 // Extends target with each options object
 function ExtendStart( config, target, i, args ) {
-	if ( config ) {
-		const targetValue = Helpers.valueOf( target );
+	const targetValue = Helpers.valueOf( target );
 
-		for ( ; i < args.length; ++i ) _Extend( config, targetValue, args[ i ] );
-	}
+	for ( ; i < args.length; ++i ) _Extend( config, targetValue, args[ i ] );
 
-	return target;
+	return config.returnTarget( target );
 }
 
 // extends target with one options object
@@ -101,3 +106,4 @@ function _Extend( config, target, options ) {
 
 	config._extendDecoratorsConfig( target, options );
 }
+// console.log('>>', require('./helpers').getAllProtos( config ));

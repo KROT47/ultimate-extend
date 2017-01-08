@@ -5,51 +5,52 @@ const ExtendConfig = require( './extend-config' );
 
 const GetConfig = require( './get-config' );
 
-const Helpers = require( './helpers' );
-
 
 /* --------------------------------- Module Exports --------------------------------- */
 
-module.exports = ExtendBase;
+module.exports = PrepareArguments;
 
-module.exports.config = ExtendConfig.factory;
+module.exports.prepareConfig = PrepareConfig;
+
+module.exports.extendConfig = ExtendConfig.factory;
 
 module.exports.isExtendConfig = ExtendConfig.isExtendConfig;
 
 
-/* --------------------------------- ExtendBase --------------------------------- */
+/* --------------------------------- PrepareArguments --------------------------------- */
 
 /**
  * Prepares for extend
- * @param (ExtendConfig|Boolean?) config - if boolean then deep property will be set
- * @param (Object) target
- * @param (Object) ...options
- * @return (Object|Function|Array|Promise) - target
+ * @param (Arguments|Array) args - all arguments for extend
+ * @param (Object) defaultConfig
+ * @return (Array) - array of arguments
  */
-function ExtendBase() {
-	var target = arguments[ 0 ],
+function PrepareArguments( args, defaultConfig ) {
+	if ( args[ 0 ].__isPreparedConfig ) return args;
+
+	var target = args[ 0 ],
 		i = 1,
 		config, options, targetPromise, type;
 
 	if ( target instanceof ExtendConfig ) {
 		// if both first and second arguments are ExtendConfigs - confusing situation
-		if ( arguments[ i ] instanceof ExtendConfig ) {
+		if ( args[ i ] instanceof ExtendConfig ) {
 			throw Error( 'Both first and second arguments can not be instances of ExtendConfig. Try to use Boolean as first one.' );
 		}
 		// update config
 		config = target.valueOf();
 		// skip the config and the target
-		target = arguments[ i++ ];
+		target = args[ i++ ];
 	} else if ( typeof target === 'boolean' ) {
 		// Handle a deep copy situation
 		config = target ? { deep: target } : false;
 		// skip the boolean and the target
-		target = arguments[ i++ ];
+		target = args[ i++ ];
 	} else if ( GetConfig.isExtendConfigObject( target ) ) {
 		// next iterations of extend
 		config = target;
 		// skip the boolean and the target
-		target = arguments[ i++ ];
+		target = args[ i++ ];
 	}
 
 	if ( !target
@@ -58,28 +59,20 @@ function ExtendBase() {
 		throw Error( `target is ${typeof target}, expected object or function` )
 	}
 
-	config = GetConfig.getFinalConfig( config || {}, this.defaultConfig );
+	config = GetConfig( config || {}, defaultConfig );
 
-	config._goDeeper();
+	PrepareConfig( config, true );
 
-	const result = this.extend( config, target, i, arguments );
-
-	config && config._goHigher();
-
-	return result;
+	return [ config, target, i, args ];
 }
 
-/* --------------------------------- SimpleExtend --------------------------------- */
+/* --------------------------------- Helpers --------------------------------- */
 
-/**
- * Extends objects when config is undefined or unneeded
- * @param (Array) args
- * @return (Object|Function|Array) - target
- */
-// function SimpleExtend( args ) {
-// 	const target = args[ 0 ];
-
-// 	Object.assign.apply( Object, args.map( Helpers.valueOf ) );
-
-// 	return target;
-// }
+function PrepareConfig( config, value ) {
+	if ( config.__isPreparedConfig === undefined || !value ) {
+		Object.defineProperty( config, '__isPreparedConfig', {
+			value: value || false,
+			configurable: true
+		});
+	}
+}
