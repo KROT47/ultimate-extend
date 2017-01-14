@@ -36,15 +36,6 @@ module.exports.decorator = require( './extend-decorator' );
 /* --------------------------------- Config --------------------------------- */
 
 Extend._defaultConfig = GetConfig({
-
-	extendProp( first, second, name, target, options ) {
-		const result = this.applyOrigin( arguments );
-
-		if ( result === undefined ) return;
-
-		return ( target[ name ] = result );
-	},
-
 	/**
 	 * Main Extend function
 	 */
@@ -87,9 +78,9 @@ function _Extend( config, target, options ) {
 
 	const [ resolvedOptions, decConfig, extendConfigs ] = config._resolveOptions( target, options );
 
-	const props = config._getProps( resolvedOptions, target, decConfig );
+	const props = config.__getProps( resolvedOptions, target, decConfig );
 
-	var first, second, name, secondConfig, i;
+	var first, second, name, secondConfig, i, result;
 
 	for ( i = props.length; i--; ) {
 		name = props[ i ];
@@ -100,7 +91,9 @@ function _Extend( config, target, options ) {
 
 		second = secondConfig.getSecond( resolvedOptions, name, target );
 
-		secondConfig.extendProp( first, second, name, target, options );
+		result = secondConfig.extendProp( first, second, name, target, options );
+
+		if ( result !== undefined ) target[ name ] = result;
 	}
 
 	config._extendDecoratorsConfig( target, options );

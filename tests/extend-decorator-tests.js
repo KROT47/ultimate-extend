@@ -399,6 +399,61 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			this.run( false, {}, a, b, expecting );
 		}
+	}, {
+		/* ------------ 11 ------------- */
+
+		info: 'Check that config saves all user defined properties in deep iterations',
+
+		test( testIndex ) {
+
+			var a = {
+				a: { b: { c1: 1 } },
+				a1: { b1: { c1: 1 } },
+			};
+
+			var b = {
+				@deep
+				a: { b: { c2: 1 } },
+				@deep
+				a1: { b1: { c2: 1 } },
+			};
+
+			var expecting = {
+				a: a,
+				b: b,
+			    result: {
+			    	a: {
+			    		counter: 3,
+						b: {
+			    			counter: 4,
+							c1: 1,
+							c2: 1
+						}
+					},
+					a1: {
+						counter: 1,
+						b1: {
+			    			counter: 2,
+							c1: 1,
+							c2: 1
+						}
+					}
+			    },
+			};
+
+			var config = Extend.config({
+				Object( first, second, name ) {
+					if ( !this.global._counter ) this.global._counter = 0;
+					this.global._counter++;
+
+					return Object.assign( {
+						counter: this.global._counter
+					}, this.applyOrigin( arguments ));
+				}
+			});
+
+			this.run( config, {}, a, b, expecting );
+		}
 	}],
 
 

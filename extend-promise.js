@@ -25,19 +25,6 @@ Object.setPrototypeOf( ExtendPromise, ExtendPrototype );
 /* --------------------------------- Config --------------------------------- */
 
 ExtendPromise._defaultConfig = GetConfig({
-
-	extendProp( first, second, name, target, options ) {
-		const result = this.applyOrigin( arguments );
-
-		if ( result instanceof Promise ) {
-			return result.then( result => ( target[ name ] = result ) );
-		}
-
-		if ( result === undefined ) return;
-
-		return ( target[ name ] = result );
-	},
-
 	/**
 	 * Main Extend function
 	 */
@@ -77,8 +64,7 @@ function ExtendPromiseStart( config, target, i, args ) {
 		let options = args[ i ];
 
 		targetPromise =
-			targetPromise
-				.then( () => _ExtendPromise( config._getConfig( options ), targetValue, options ) );
+			targetPromise.then( () => _ExtendPromise( config, targetValue, options ) );
 	}
 
 	return targetPromise.then( () => config.returnTarget( target ) );
@@ -97,7 +83,7 @@ function _ExtendPromise( config, target, options ) {
 
 	const [ resolvedOptions, decConfig, extendConfigs ] = config._resolveOptions( target, options );
 
-	const props = config._getProps( resolvedOptions, target, decConfig );
+	const props = config.__getProps( resolvedOptions, target, decConfig );
 
 	const names = [];
 	const secondPromises = [];
@@ -128,19 +114,23 @@ function _ExtendPromise( config, target, options ) {
 	);
 }
 function _extend( results, config, target, options, names, secondConfigs ) {
-	var first, second, name, secondConfig, i;
-	var promise, promises = [];
+	var first, second, secondConfig, i;
+	var result, promises = [];
 
 	for ( i = results.length; i--; ) {
-		name = names[ i ];
+		let name = names[ i ];
 		secondConfig = secondConfigs[ i ];
 		second = results[ i ];
 
 		first = config.getFirst( target, name, options );
 
-		promise = secondConfig.extendProp( first, second, name, target, options );
+		result = secondConfig.extendProp( first, second, name, target, options );
 
-		if ( promise ) promises.push( promise );
+		if ( !( result instanceof Promise ) ) result = Promise.resolve( result );
+
+		promises.push(
+			result.then( result => result !== undefined && ( target[ name ] = result ) )
+		);
 	}
 
 	return Promise.all( promises );

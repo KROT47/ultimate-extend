@@ -353,6 +353,42 @@ module.exports = ({ assert, log, error }) => ({
 			this.run( config, target, a, b, expecting );
 
 		}
+	}, {
+		/* ------------ 15 ------------- */
+
+		test( testIndex ) {
+
+			var config = Extend.config({
+				deep: true,
+
+				getProps() {
+					if ( !this.global.store ) this.global.store = { _a: 0 };
+
+					return this.applyOrigin( arguments );
+				},
+
+				Object( first, second, name ) {
+					this.global.store._a++;
+
+					return Object.assign( {
+						_a: this.global.store._a,
+					}, this.applyOrigin( arguments ) );
+				},
+			});
+
+			var target = {};
+
+			var a = { a: { a: 1, b: { b: 3 } } };
+
+			var b = { a: { a: 2, b: { b: 4 } } };
+
+			var expecting = {
+			    result: { a: { a: 2, _a: 1, b: { b: 4, _a: 2 } } }
+			};
+
+			this.run( config, target, a, b, expecting );
+
+		}
 	}],
 
 	run( config, target, a, b, expecting, func ) {

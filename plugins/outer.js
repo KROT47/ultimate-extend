@@ -22,10 +22,12 @@ module.exports = {
 		args = args.map( ( value, index ) => index >= i - 1 ? { outer: value } : value );
 
 		config = config.newPrimary({
-			level: -2,
+			get level() { return this.global.__level - 1 },
+			set level( value ) { this.global.__level = value + 1 },
 
 			deep() { return this.level === -1 || this.callOrigin() },
 		});
+
 
 		return extend( [ config, {}, i - 1, args ], target => target.outer );
 	}

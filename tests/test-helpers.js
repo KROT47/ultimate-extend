@@ -42,13 +42,13 @@ function sameProps( allProps, first, second ) {
 
 	if ( !first || !second ) return first === second;
 
-	if ( ( type = typeof first ) !== typeof second ) return false;
+	if ( ( type = typeof first ) !== typeof second ) return console.log(1) || false;
 
 	if ( type === 'object' ) {
 		const firstPropNames = allProps ? Object.getOwnPropertyNames( first ) : Object.keys( first );
 		const propNames = allProps ? Object.getOwnPropertyNames( second ) : Object.keys( second );
 
-		if ( firstPropNames.length !== propNames.length ) return false;
+		if ( firstPropNames.length !== propNames.length ) return console.log(2) || false;
 
 		for ( i = propNames.length; i--; ) {
 			prop = propNames[ i ];
@@ -63,27 +63,27 @@ function sameProps( allProps, first, second ) {
 
 			type = typeof firstValue;
 
-			if ( type !== typeof secondValue ) return false;
+			if ( type !== typeof secondValue ) return console.log(3) || false;
 
 			switch ( type ) {
 				case 'object':
 					if ( !sameProps( allProps, firstValue, secondValue ) ) {
-						return false;
+						return console.log(4) || false;
 					}
 				break;
 
 				case 'function':
 					if ( firstValue.toString() !== secondValue.toString() ) {
-						return false;
+						return console.log(5) || false;
 					}
 				break;
 
 				default:
-					if ( firstValue !== secondValue ) return false;
+					if ( firstValue !== secondValue ) return console.log(6) || false;
 			}
 		}
 	} else {
-		if ( first !== second ) return false;
+		if ( first !== second ) return console.log(7) || false;
 	}
 
 	return true;

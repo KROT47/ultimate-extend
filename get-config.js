@@ -39,7 +39,14 @@ const DefaultConfigObject = {
 		 * @param (Object) target - extension object
 		 * @return (Mixed)
 		 */
-		getProps: ( options, target ) => Object.keys( options ),
+		getProps( options, target ) {
+			const props = [];
+
+			for ( var i in options ) props.push( i );
+
+			return props;
+			// return Object.keys( options );
+		},
 
 		/**
 		 * Default method to get target property to extend by name
@@ -73,13 +80,9 @@ const DefaultConfigObject = {
 		 * @return (Mixed)
 		 */
 		extendProp( first, second, name, target, options ) {
-			var extendMethodName = 'Any';
-
-			if ( !this.Any ) {
-				const type = this.helpers.getType( second );
-				extendMethodName =
-					this.helpers.getType( first ) === type ? [ type, 'Default' ] : 'extendDifferent';
-			}
+			const type = this.helpers.getType( second );
+			extendMethodName =
+				this.helpers.getType( first ) === type ? [ type, 'Default' ] : 'extendDifferent';
 
 			return this.applyMethod( extendMethodName, arguments );
 		},
@@ -130,10 +133,6 @@ const DefaultConfigObject = {
 
 		/* --------------------------------- Extend Default --------------------------------- */
 
-		// if defined all props will be extended with it
-		// e.g. Any( ... ) { if ( typeof second === 'object' ) { do smth } else { do other } }
-		Any: undefined,
-
 		// By default first will be replaced with second
 		Default: ( first, second, name, target, options ) => second,
 
@@ -177,13 +176,41 @@ Object.defineProperties( DefaultConfigPrototype, {
 	/* --------------------------------- Public --------------------------------- */
 
 	/**
-	 * Link to UltimateExtend module
-	 * @type (Object)
+	 * Writes value to config data store by name to use it through all execution
+	 * @param (String) name
+	 * @param (Mixed) value
 	 */
-	BaseExtend: {
-		value: Extend,
-		enumerable: true
-	},
+	// set: {
+	// 	value( name, value ) {
+	// 		if ( value === undefined ) {
+	// 			delete this.__storage[ name ];
+	// 			return;
+	// 		}
+
+	// 		this.__storage[ name ] = value;
+	// 	},
+	// 	enumerable: true
+	// },
+
+	/**
+	 * Updates value in config data store by name using function
+	 * @param (String) name
+	 * @param (Function) func - current value will be passed as argument
+	 */
+	// update: {
+	// 	value( name, func ) { this.set( name, func( this.get( name ) ) ) },
+	// 	enumerable: true
+	// },
+
+	/**
+	 * Returns value from config data store by name
+	 * @param (String) name
+	 * @return (Mixed)
+	 */
+	// get: {
+	// 	value( name ) { return this.__storage[ name ] },
+	// 	enumerable: true
+	// },
 
 	/**
 	 * All helpers available
@@ -199,8 +226,17 @@ Object.defineProperties( DefaultConfigPrototype, {
 	 * @return (Object|false)
 	 */
 	level: {
-		get() { return this.__level },
-		set( value ) { this.__level = value },
+		get() { return this.global.__level },
+		set( value ) { this.global.__level = value },
+		enumerable: true
+	},
+
+	/**
+	 * Link to UltimateExtend module
+	 * @type (Object)
+	 */
+	BaseExtend: {
+		value: Extend,
 		enumerable: true
 	},
 
@@ -444,7 +480,7 @@ Object.defineProperties( DefaultConfigPrototype, {
 	isFinal: { 		get() { return this.is( 'Final' ) }, enumerable: true },
 
 	/**
-	 * Returns closest config by type
+	 * Returns closest config by type ( goes from top to deep prototype )
 	 * @param (String) configType
 	 * @return (Object|undefined)
 	 */
@@ -759,7 +795,7 @@ Object.defineProperties( DefaultConfigPrototype, {
 	 * @param (Object) decConfig
 	 * @return (Array)
 	 */
-	_getProps: {
+	__getProps: {
 		value( options, target, decConfig ) {
 			const props = this.getProps( options, target );
 
@@ -768,16 +804,45 @@ Object.defineProperties( DefaultConfigPrototype, {
 	},
 
 	/**
-	 * Returns self or new config using options' decorators configs
+	 * Uses special config by name in func
 	 * @param (Object) extendConfigs
 	 * @param (String) name
+	 * @param (Function) func
+	 * @return (Object)
+	 */
+	_useConfig: {
+		value( configs, name, func ) {
+			if ( !configs || !configs[ name ] ) return func( this );
+
+			// all final configs will be used in new config's as is
+			// to set/get all user defined dynamic properties
+			const deepestFinal = Helpers.getDeepestProto( this, proto => proto.isFinal );
+
+			const oldNonFinal = this.getNonFinal();
+
+			var newConfig = oldNonFinal.newConfig( configs[ name ] );
+
+			Object.setPrototypeOf( deepestFinal, newConfig );
+
+			func( this );
+
+			// return final configs back to old non final base
+			Object.setPrototypeOf( deepestFinal, oldNonFinal );
+		}
+	},
+
+	/**
+	 * Returns new config from configs and name
+	 * @param (Object) extendConfigs
+	 * @param (String) name
+	 * @param (Function) func
 	 * @return (Object)
 	 */
 	_getConfig: {
-		value( extendConfigs, name ) {
-			if ( !extendConfigs || !extendConfigs[ name ] ) return this;
+		value( configs, name, func ) {
+			if ( !configs || !configs[ name ] ) return this;
 
-			return this.newConfig( extendConfigs[ name ] );
+			return this.newConfig( configs[ name ] );
 		}
 	},
 
@@ -1052,14 +1117,17 @@ const ConfigTypes = {
 	Final: {
 		newConfig( config, newConfigs ) {
 			// final config is created on top of last config in chain
-			const newConfig = Object.create( config );
-
-			// each new final config should have clear state
-			Object.defineProperties( newConfig, { __state: { value: {}, } } );
+			const newConfig = Object.create( config.getNonFinal() );
 
 			if ( !config.isFinal ) {
 				// for first Final config setup base defaults
-				Object.defineProperties( newConfig, { __level: { value: -1, writable: true } } );
+				newConfig.global = {};
+
+				Object.defineProperties( newConfig.global, {
+					__level: { value: -1, writable: true },
+				});
+			} else {
+				newConfig.global = config.global;
 			}
 
 			SetConfigType( newConfig, 'Final' );

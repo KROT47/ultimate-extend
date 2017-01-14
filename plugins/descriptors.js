@@ -12,7 +12,10 @@ module.exports = {
 	 * @return (Object|Array|Function) - extend final result ( target )
 	 */
 	descriptors( extend, config, target, i, args ) {
-		config = config.newBase( DescriptorsConfig );
+		config =
+			config
+				.newBase( BaseDescriptorsConfig )
+				.newPrimary( PrimaryDescriptorsConfig );
 
 		return extend( [ config, target, i, args ] );
 	},
@@ -21,101 +24,134 @@ module.exports = {
 
 /* --------------------------------- Descriptors Config --------------------------------- */
 
-const DescriptorsConfig = {
-	// if true then same type descriptors will be extended deeply as objects
-	// false - descriptors will be replaced
-	descriptorsDeep: false,
+/* ------------ PrimaryDescriptorsConfig ------------- */
 
-	// if resolveGetters && deep === true
-	// 		- getters will be resolved to check if result is object like to deeply extend it
-	resolveGetters: false,
+// Primary config could be overloaded only with another Primary config
+const PrimaryDescriptorsConfig = {
 
-	getProps( options) {
-		this._descriptors = {};
+	getProps( options, target ) {
+		if ( !target.__HiddenDescriptors ) target.__HiddenDescriptors = {};
 
-		return Object.getOwnPropertyNames( options );
+		return this.applyOrigin( arguments );
 	},
 
-	getFirst( target, name, options ) {
-		return (
-			this._descriptors[ name ]
-			|| this.descriptorsDeep && this.getDescriptor( target, name )
-		);
-	},
+	extendProp( firstDescr, secondDescr, name, target, options ) {
+		if ( !isDescriptors( arguments ) ) return this.applyOrigin( arguments );
 
-	getSecond: ( options, name, target ) => getDescriptor( options, name ),
-
-	Any( firstDescr, secondDescr, name, target, options ) {
-		if ( this.deep ) {
-			const second = this._tryToResolve( secondDescr );
-
-			if ( typeof second === 'object' ) {
-				var first = this._tryToResolve( firstDescr );
-
-				const extendArgs = [ this.helpers.newObject( second ) ];
-
-				const firstType = this.helpers.getType( first );
-				const secondType = this.helpers.getType( second );
-
-				if ( firstType === secondType ) extendArgs.push( first );
-
-				extendArgs.push( second );
-
-				this._descriptors[ name ] = {
-					value: this.applyExtend( extendArgs ),
-					configurable: true,
-					enumerable: true,
-					writable: true,
-				};
-
-				return;
-			}
-		}
-
-		if ( firstDescr ) secondDescr = this.applyMethod( 'ExtendDescriptors', arguments );
-
-		this._descriptors[ name ] = secondDescr;
-	},
-
-	returnTarget( target ) {
-		Object.defineProperties( target, this._descriptors );
-
-		return target;
-	},
-
-	ExtendDescriptors( firstDescr, secondDescr, name, target, options ) {
 		var extendMethodName = 'AnyDescriptors';
 
 		if ( !this.AnyDescriptors ) {
-			const firstType = firstDescr.type;
+			const firstType = firstDescr && firstDescr.type || undefined;
 
 			extendMethodName =
 				firstType === secondDescr.type ? firstType : 'DifferentDescriptors';
 		}
 
-		return this.applyMethod( extendMethodName, arguments );
+		target.__HiddenDescriptors[ name ] = this.applyMethod( extendMethodName, arguments );
+	},
+};
+
+
+/* ------------ BaseDescriptorsConfig ------------- */
+
+// Base config may be overloaded by any config ( Primary, Static, Base )
+const BaseDescriptorsConfig = {
+	// if true then same type descriptors will be extended deeply as objects
+	// false - descriptors will be replaced
+	descriptorsDeep: false,
+
+	// finds all property names even for non enumerable properties
+	getProps( options, target ) {
+		const type = eval( this.helpers.getType( options ) );
+
+		var props = this._getPropNames( options );
+
+		var protoProps;
+
+		while ( ( options = Object.getPrototypeOf( options ) ) && options !== type.prototype ) {
+			protoProps = this._getPropNames( options );
+
+			props = props.concat( protoProps.filter( item => !~props.indexOf( item ) ) );
+		}
+
+		return props;
+	},
+
+	getFirst( target, name, options ) {
+		return (
+			target.__HiddenDescriptors[ name ]
+			|| this.getDescriptor( target, name )
+			|| getUndefinedValueDescr()
+		);
+	},
+
+	getSecond( options, name, target ) { return getDescriptor( options, name ) },
+
+	returnTarget( target ) {
+		// only in the end all descriptors will be defined as properties
+		// this prevents error when trying to redefine non-configurable prop in process
+		if ( !this.level ) this._setupHiddenDescriptors( target );
+
+		return target;
 	},
 
 	AnyDescriptors: undefined,
 
 	DifferentDescriptors( firstDescr, secondDescr, name, target, options ) {
-		return this.Default.apply( this, arguments );
+		return this.applyMethod( 'DefaultDescriptor', arguments );
 	},
 
 	Value( firstDescr, secondDescr, name, target, options ) {
-		return (
+		const descr =
 			this.descriptorsDeep ?
-				this.BaseExtend( firstDescr, secondDescr ) :
-				this.Default.apply( this, arguments )
-		);
+				Object.assign( {}, firstDescr, secondDescr ) :
+				Object.assign( {}, secondDescr );
+
+		descr.value =
+			this.applyMethod( 'extendProp', arguments, {
+				0: firstDescr.value,
+				1: secondDescr.value,
+			});
+
+		return descr;
 	},
 
 	GetterSetter( firstDescr, secondDescr, name, target, options ) {
-		return this.BaseExtend( this.descriptorsDeep, firstDescr, secondDescr );
+		return (
+			this.descriptorsDeep ?
+				Object.assign( {}, firstDescr, secondDescr ) :
+				this.applyMethod( 'DefaultDescriptor', arguments )
+		);
 	},
 
 	// By default first will be replaced with second
-	Default: ( firstDescr, secondDescr, name, target, options ) => secondDescr,
+	DefaultDescriptor: ( firstDescr, secondDescr, name, target, options ) => secondDescr,
+
+
+	/* --------------------------------- Private --------------------------------- */
+
+	_setupHiddenDescriptors( target ) {
+		var descr, i;
+
+		for ( i in target.__HiddenDescriptors ) {
+			descr = target.__HiddenDescriptors[ i ];
+
+			if ( descr.type === 'Value' && descr.value.__HiddenDescriptors ) {
+				this._setupHiddenDescriptors( descr.value );
+			}
+		}
+
+		Object.defineProperties( target, target.__HiddenDescriptors );
+		delete target.__HiddenDescriptors;
+	},
+
+	_getPropNames( obj ) {
+		const props = Object.getOwnPropertyNames( obj );
+
+		if ( Array.isArray( obj ) ) props.splice( props.indexOf( 'length' ), 1 );
+
+		return props;
+	},
 
 
 	/* --------------------------------- User Helpers --------------------------------- */
@@ -123,37 +159,79 @@ const DescriptorsConfig = {
 	getDescriptorType,
 
 	getDescriptor,
-
-	/* --------------------------------- Special Helpers --------------------------------- */
-
-	_tryToResolve( descr ) {
-		if ( !descr ) return;
-
-		var isValue = descr.type === 'Value';
-
-		if ( !isValue && !this.resolveGetters ) return;
-
-		if ( isValue ) return descr.value;
-
-		try {
-			return descr.get && descr.get.call( descr.owner );
-		} catch ( e ) {}
-	},
 };
+
 
 /* --------------------------------- Helpers --------------------------------- */
 
+/**
+ * Returns prepared object property descriptor
+ * @param (Object) obj
+ * @param (String) propName
+ * @return (Object)
+ */
 function getDescriptor( obj, propName ) {
-	const descr = Object.getOwnPropertyDescriptor( obj, propName );
+	const descr = _getDescriptor( obj, propName );
 
-	descr.type = getDescriptorType( descr );
-	descr.owner = obj;
+	if ( !descr ) return;
+
+	return initDescriptor( descr, obj );
+}
+function _getDescriptor( obj, propName ) {
+	var descr = Object.getOwnPropertyDescriptor( obj, propName );
+
+	while ( !descr && ( obj = Object.getPrototypeOf( obj ) ) && obj !== Object.prototype ) {
+		descr = Object.getOwnPropertyDescriptor( obj, propName );
+	}
 
 	return descr;
 }
 
-function getDescriptorType( obj ) {
-	if ( !obj ) return;
+/**
+ * Checks if at least one of first two arguments is descriptor
+ * @param (Arguments) args
+ * @return (Boolean)
+ */
+function isDescriptors( args ) {
+	const arg = args[ 0 ] !== undefined ? args[ 0 ] : args[ 1 ];
 
-	return obj.get || obj.set ? 'GetterSetter' : 'Value';
+	return typeof arg === 'object' && arg.__isDescriptor;
+}
+
+/**
+ * Returns prepared Value descriptor with value === undefined
+ * @return (Object)
+ */
+function getUndefinedValueDescr() {
+	return initDescriptor({
+		value: undefined,
+		configurable: true,
+		enumerable: true,
+		writable: true,
+	});
+}
+
+/**
+ * Prepares descriptor
+ * @param (Object) descr
+ * @param (Object?) owner
+ * @return (Object)
+ */
+function initDescriptor( descr, owner ) {
+	descr.type = getDescriptorType( descr );
+	descr.owner = owner;
+	descr.__isDescriptor = true;
+
+	return descr;
+}
+
+/**
+ * Returns descriptor type
+ * @param (Object) descr
+ * @return (String)
+ */
+function getDescriptorType( descr ) {
+	if ( !descr ) return;
+
+	return descr.get || descr.set ? 'GetterSetter' : 'Value';
 }

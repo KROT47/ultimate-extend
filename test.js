@@ -1,7 +1,7 @@
 
 /* --------------------------------- Required Modules --------------------------------- */
 
-const Tests = require( 'ultimate-tests' );
+const Tests = require( '../ultimate-tests' );
 
 
 /* --------------------------------- Tests --------------------------------- */
@@ -17,6 +17,7 @@ new Tests({
 		// except: [ 'Extend.decorator' ],
 		// except: [],
 		// except: [ 'Extend.promise' ],
+		// except: [ 'Extend.plugins' ],
 	},
 
 	defaultConfig: {
