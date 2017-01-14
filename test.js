@@ -1,7 +1,7 @@
 
 /* --------------------------------- Required Modules --------------------------------- */
 
-const Tests = require( '../ultimate-tests' );
+const Tests = require( 'ultimate-tests' );
 
 
 /* --------------------------------- Tests --------------------------------- */

@@ -1121,13 +1121,19 @@ const ConfigTypes = {
 
 			if ( !config.isFinal ) {
 				// for first Final config setup base defaults
+
+				// global is singleton for all configs while Extend in progress
 				newConfig.global = {};
+				// local will be passed to children configs as clone of current config's local
+				newConfig.local = {};
 
 				Object.defineProperties( newConfig.global, {
 					__level: { value: -1, writable: true },
 				});
 			} else {
 				newConfig.global = config.global;
+
+				newConfig.local = Object.assign( {}, config.local );
 			}
 
 			SetConfigType( newConfig, 'Final' );

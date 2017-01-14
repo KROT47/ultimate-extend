@@ -378,16 +378,51 @@ module.exports = ({ assert, log, error }) => ({
 
 			var target = {};
 
-			var a = { a: { a: 1, b: { b: 3 } } };
+			var a = { a: { b: {} }, c: { d: {} } };
 
-			var b = { a: { a: 2, b: { b: 4 } } };
+			var b = { a: { b: {} }, c: { d: {} } };
 
 			var expecting = {
-			    result: { a: { a: 2, _a: 1, b: { b: 4, _a: 2 } } }
+			    result: { a: { _a: 3, b: { _a: 4 } }, c: { _a: 1, d: { _a: 2 } } }
 			};
 
 			this.run( config, target, a, b, expecting );
 
+		}
+	}, {
+		/* ------------ 16 ------------- */
+
+		test( testIndex ) {
+
+			var config = Extend.config({
+				deep: true,
+
+				getProps() {
+					if ( !this.local.a ) this.local.a = 0;
+
+					return this.applyOrigin( arguments );
+				},
+
+				Object( first, second, name ) {
+					this.local.a++;
+
+					return Object.assign( {
+						_a: this.local.a,
+					}, this.applyOrigin( arguments ) );
+				},
+			});
+
+			var target = {};
+
+			var a = { a: { b: {} }, c: { d: {} } };
+
+			var b = { a: { b: {} }, c: { d: {} } };
+
+			var expecting = {
+			    result: { a: { _a: 2, b: { _a: 3 } }, c: { _a: 1, d: { _a: 2 } } }
+			};
+
+			this.run( config, target, a, b, expecting );
 		}
 	}],
 
