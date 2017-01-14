@@ -81,8 +81,9 @@ const DefaultConfigObject = {
 		 */
 		extendProp( first, second, name, target, options ) {
 			const type = this.helpers.getType( second );
-			extendMethodName =
-				this.helpers.getType( first ) === type ? [ type, 'Default' ] : 'extendDifferent';
+			const extendMethodName =
+					this.helpers.getType( first ) === type ?
+						[ type, 'Default' ] : 'extendDifferent';
 
 			return this.applyMethod( extendMethodName, arguments );
 		},
