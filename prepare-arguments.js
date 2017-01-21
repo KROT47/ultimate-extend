@@ -26,7 +26,9 @@ module.exports.isExtendConfig = ExtendConfig.isExtendConfig;
  * @return (Array) - array of arguments
  */
 function PrepareArguments( args, defaultConfig ) {
-	if ( args[ 0 ].__isPreparedConfig ) return args;
+	if ( args[ 0 ].__isPreparedConfig ) {
+		return !Array.isArray( args ) ? Array.prototype.slice.call( args ) : args;
+	}
 
 	var target = args[ 0 ],
 		i = 1,
