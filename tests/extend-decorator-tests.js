@@ -10,7 +10,7 @@ const TestHelpers = require( './test-helpers' );
 
 const Decorators = require( '../decorators' );
 
-const { deep, getter, skip, concat, concatReverse } = Decorators;
+const { deep, dependsOn, getter, skip, concat, concatReverse } = Decorators;
 
 const DecoratorsConfig = Decorators._defaultConfig;
 
@@ -22,7 +22,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 	tests: [{
 		/* ------------ 1 ------------- */
 
-		info: 'Test Extend.asIs with Extend-decorator generated params',
+		info: 'testing when all options objects have decorators',
 
 		test( testIndex ) {
 
@@ -38,8 +38,8 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			var aDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
 					value: {
-						decorators: { str: [ DecoratorsConfig.getter ] },
-						configs: { arr: Object.assign( {}, DecoratorsConfig.deep, DecoratorsConfig.concat ) }
+						decorators: { str: [ DecoratorsConfig.getter.func ] },
+						configs: { arr: Object.assign( {}, DecoratorsConfig.deep.config, DecoratorsConfig.concat.config ) }
 					},
 					configurable: true
 				}
@@ -56,8 +56,8 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			var bDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
 					value: {
-						decorators: { obj: [ DecoratorsConfig.getter ] },
-						configs: { arr: DecoratorsConfig.concatReverse }
+						decorators: { obj: [ DecoratorsConfig.getter.func ] },
+						configs: { arr: DecoratorsConfig.concatReverse.config }
 					},
 					configurable: true
 				}
@@ -70,10 +70,10 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			    	__decoratorsConfig: {
 			    		value: {
 				    		decorators: {
-				    			str: [ DecoratorsConfig.getter ],
-				    			obj: [ DecoratorsConfig.getter ]
+				    			str: [ DecoratorsConfig.getter.func ],
+				    			obj: [ DecoratorsConfig.getter.func ]
 				    		},
-							configs: { arr: DecoratorsConfig.concatReverse }
+							configs: { arr: DecoratorsConfig.concatReverse.config }
 						},
 						configurable: true
 			    	}
@@ -88,6 +88,10 @@ module.exports = ({ assert, log, error, expectError }) => ({
 				extend: Extend.asIs,
 				assert: ( real, expecting ) => TestHelpers.sameProps( true, real, expecting ),
 			});
+
+			/* ------------ Check that a decoratorsConfig was not changed ------------- */
+
+
 		}
 	}, {
 		/* ------------ 2 ------------- */
@@ -104,7 +108,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 
 			var b = {
 				@getter
-				obj( target, options, name ) { return {} }
+				obj( target, options, name ) { return {} },
 			};
 
 			var expecting = {
@@ -117,6 +121,106 @@ module.exports = ({ assert, log, error, expectError }) => ({
 		}
 	}, {
 		/* ------------ 3 ------------- */
+
+		info: 'testing when second options object has no decorators',
+
+		test( testIndex ) {
+
+			var a = {
+				@concat
+				arr: [ 1, 2 ],
+
+				@getter
+				str( target, options, name ) { return 'test' },
+
+				@getter
+				obj: ( target, options, name ) => { return {} },
+			};
+
+			var aDecoratorsExtendConfig = Object.create( Object.prototype, {
+				__decoratorsConfig: {
+					value: {
+						decorators: {
+							str: [ DecoratorsConfig.getter.func ],
+							obj: [ DecoratorsConfig.getter.func ],
+						},
+						configs: { arr: DecoratorsConfig.concat.config }
+					},
+					configurable: true
+				}
+			});
+
+			var b = {
+				str: 'asd',
+			};
+
+			var expecting = {
+				a: Helpers.extendAll( {}, a, aDecoratorsExtendConfig ),
+				b: b,
+			    result: Object.assign( Object.create( Object.prototype, {
+			    	__decoratorsConfig: {
+			    		value: {
+				    		decorators: {
+								obj: [ DecoratorsConfig.getter.func ],
+							},
+							configs: { arr: DecoratorsConfig.concat.config }
+						},
+						configurable: true
+			    	}
+			    }), { arr: a.arr, str: b.str, obj: a.obj })
+			};
+
+			var resultOptions;
+
+			this.run( false, {}, a, b, expecting, {
+				extend: Extend.asIs,
+				assert: ( real, expecting ) => TestHelpers.sameProps( true, real, expecting ),
+				after: result => { resultOptions = result },
+			});
+
+
+			/* ------------ Check that config gives correct result ------------- */
+
+			var expecting = {
+				a: {},
+				b: resultOptions,
+			    result: { arr: a.arr, str: 'asd', obj: {} },
+			};
+
+			this.run( false, {}, expecting.a, resultOptions, expecting );
+
+
+			/* ------------ Check that origin config was not changed ------------- */
+
+			var b = {};
+
+			var expecting = {
+				a: Helpers.extendAll( {}, a, aDecoratorsExtendConfig ),
+				b: b,
+			    result: Object.assign( Object.create( Object.prototype, {
+			    	__decoratorsConfig: {
+			    		value: {
+				    		decorators: {
+				    			str: [ DecoratorsConfig.getter.func ],
+								obj: [ DecoratorsConfig.getter.func ],
+							},
+							configs: { arr: DecoratorsConfig.concat.config }
+						},
+						configurable: true
+			    	}
+			    }), { arr: a.arr, str: a.str, obj: a.obj })
+			};
+
+			var resultOptions;
+
+			this.run( false, {}, a, b, expecting, {
+				extend: Extend.asIs,
+				assert: ( real, expecting ) => TestHelpers.sameProps( true, real, expecting ),
+				after: result => { resultOptions = result },
+			});
+		}
+	}, {
+		/* ------------ 4 ------------- */
 
 		test( testIndex ) {
 
@@ -144,7 +248,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			});
 		}
 	}, {
-		/* ------------ 4 ------------- */
+		/* ------------ 5 ------------- */
 
 		info: 'config.resolve = false allows to extend decorators, to use produced objects elsewhere',
 
@@ -161,8 +265,8 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			var aDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
 					value: {
-						decorators: { str: [ DecoratorsConfig.getter ] },
-						configs: { arr: DecoratorsConfig.concat }
+						decorators: { str: [ DecoratorsConfig.getter.func ] },
+						configs: { arr: DecoratorsConfig.concat.config }
 					},
 					configurable: true
 				}
@@ -178,7 +282,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			var bDecoratorsExtendConfig = Object.create( Object.prototype, {
 				__decoratorsConfig: {
 					value: {
-						configs: { arr: DecoratorsConfig.concatReverse }
+						configs: { arr: DecoratorsConfig.concatReverse.config }
 					},
 					configurable: true
 				}
@@ -193,7 +297,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 				result: Object.assign( Object.create( Object.prototype, {
 			    	__decoratorsConfig: {
 			    		value: {
-				    		configs: { arr: DecoratorsConfig.concatReverse }
+				    		configs: { arr: DecoratorsConfig.concatReverse.config }
 						},
 						configurable: true
 			    	}
@@ -220,7 +324,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			});
 		}
 	}, {
-		/* ------------ 5 ------------- */
+		/* ------------ 6 ------------- */
 
 		info: 'Combinations of functions and configs are allowed in decorators',
 
@@ -253,7 +357,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			this.run( false, {}, a, b, expecting );
 		}
 	}, {
-		/* ------------ 6 ------------- */
+		/* ------------ 7 ------------- */
 
 		info: 'Decorators must be executed in correct order',
 
@@ -280,15 +384,15 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			this.run( false, {}, a, b, expecting );
 		}
 	}, {
-		/* ------------ 7 ------------- */
+		/* ------------ 8 ------------- */
 
 		info: 'Some configs methods are unallowed in decorators',
 
 		test( testIndex ) {
 
 			// with errors
-			const decWithError1 = Extend.decorator({ getOption() {} });
-			const decWithError2 = Extend.decorator({ getProps() {} });
+			const decWithError1 = Extend.decorator({ config: { getOption() {} } });
+			const decWithError2 = Extend.decorator({ config: { getProps() {} } });
 
 			expectError( 'decorator error must be thrown', () => {
 				var b = {
@@ -305,7 +409,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			});
 		}
 	}, {
-		/* ------------ 8 ------------- */
+		/* ------------ 9 ------------- */
 
 		info: 'System properties must be omitted with getProps',
 
@@ -335,7 +439,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			this.run( config, {}, a, b, expecting );
 		}
 	}, {
-		/* ------------ 9 ------------- */
+		/* ------------ 10 ------------- */
 
 		info: 'Test for correct extending as-is',
 
@@ -364,7 +468,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			this.run( config, {}, a, b, expecting );
 		}
 	}, {
-		/* ------------ 10 ------------- */
+		/* ------------ 11 ------------- */
 
 		info: 'Check for correctness of getter arguments',
 
@@ -400,7 +504,7 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			this.run( false, {}, a, b, expecting );
 		}
 	}, {
-		/* ------------ 11 ------------- */
+		/* ------------ 12 ------------- */
 
 		info: 'Check that config saves all user defined properties in deep iterations',
 
@@ -453,6 +557,153 @@ module.exports = ({ assert, log, error, expectError }) => ({
 			});
 
 			this.run( config, {}, a, b, expecting );
+		}
+	}, {
+		/* ------------ 13 ------------- */
+
+		info: 'Extend asIs with @dependsOn',
+
+		test( testIndex ) {
+			var a = {
+				@getter
+				host( target, options, name ) { return `host.com` },
+
+				@getter
+				@dependsOn( 'host', 'path' )
+				url( target, options, name ) { return `${options.host}${options.path}` },
+
+				@getter
+				@dependsOn( 'host' )
+				path( target, options, name ) { return `/path` },
+			};
+
+			var DependsOnConfig = DecoratorsConfig.dependsOn().configExtension;
+			var DependsOnConfigCtx = DependsOnConfig.initCtx();
+
+			var aDecoratorsExtendConfig = Object.create( Object.prototype, {
+				__decoratorsConfig: {
+					value: {
+						decorators: {
+							host: [ DecoratorsConfig.getter.func ],
+							url: [ DecoratorsConfig.getter.func ],
+							path: [ DecoratorsConfig.getter.func ],
+						},
+						configExtensions: {
+							dependsOn: {
+								extCtx: Helpers.extendAll( {}, DependsOnConfigCtx, {
+									url: [ 'host', 'path' ],
+									path: [ 'host' ],
+								}),
+								getConfig: DependsOnConfig.getConfig
+							},
+						},
+					},
+					configurable: true
+				}
+			});
+
+			var b = {
+				@getter
+				@dependsOn( 'path' )
+				url( target, options, name ) { return `${options.host}${options.path}` },
+			};
+
+			var bDecoratorsExtendConfig = Object.create( Object.prototype, {
+				__decoratorsConfig: {
+					value: {
+						decorators: {
+							url: [ DecoratorsConfig.getter.func ],
+						},
+						configExtensions: {
+							dependsOn: {
+								extCtx: Helpers.extendAll( {}, DependsOnConfigCtx, {
+									url: [ 'path' ],
+								}),
+								getConfig: DependsOnConfig.getConfig
+							},
+						},
+					},
+					configurable: true
+				}
+			});
+
+			var expecting = {
+				a: Helpers.extendAll( {}, a, aDecoratorsExtendConfig ),
+				b: Helpers.extendAll( {}, b, bDecoratorsExtendConfig ),
+			    result: Object.assign( Object.create( Object.prototype, {
+			    	__decoratorsConfig: {
+						value: {
+							decorators: {
+								host: [ DecoratorsConfig.getter.func ],
+								url: [ DecoratorsConfig.getter.func ],
+								path: [ DecoratorsConfig.getter.func ],
+							},
+							configExtensions: {
+								dependsOn: {
+									extCtx: Helpers.extendAll( {}, DependsOnConfigCtx, {
+										url: [ 'path' ],
+										path: [ 'host' ],
+									}),
+									getConfig: DependsOnConfig.getConfig
+								},
+							},
+						},
+						configurable: true
+					}
+			    }), {
+			    	host: a.host,
+			    	path: a.path,
+			    	url: b.url,
+			    })
+			};
+
+			this.run( false, {}, a, b, expecting, {
+				extend: Extend.asIs,
+				assert: ( real, expecting ) => TestHelpers.sameProps( true, real, expecting ),
+			});
+		}
+	}, {
+		/* ------------ 14 ------------- */
+
+		info: '@dependsOn test',
+
+		test( testIndex ) {
+			var a = {
+				@getter
+				host( target, options, name ) { return `host.com` },
+
+				@getter
+				@dependsOn( 'host', 'path' )
+				url( target, options, name ) { return `${options.host}${options.path}` },
+
+				@getter
+				@dependsOn( 'host' )
+				path( target, options, name ) { return `/path` },
+			};
+
+			var b = {
+				@getter
+				query( target, options, name ) { return '?q=node' },
+
+				@getter
+				@dependsOn( 'query' )
+				url( target, options, name ) {
+					return `${target.host}${target.path}${options.query}`
+				},
+			};
+
+			var expecting = {
+				a: a,
+				b: b,
+				result: {
+			    	host: 'host.com',
+			    	path: '/path',
+			    	query: '?q=node',
+			    	url: 'host.com/path?q=node',
+			    }
+			};
+
+			this.run( false, {}, a, b, expecting );
 		}
 	}],
 

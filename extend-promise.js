@@ -81,9 +81,10 @@ function _ExtendPromise( config, target, options ) {
 
 	options = Helpers.valueOf( options );
 
-	const [ resolvedOptions, decConfig, extendConfigs ] = config._resolveOptions( target, options );
+	const [ resolvedOptions, optionsConfig, decConfig, extendConfigs ] =
+			config._resolveOptions( target, options );
 
-	const props = config.__getProps( resolvedOptions, target, decConfig );
+	const props = optionsConfig.__getProps( resolvedOptions, target, decConfig );
 
 	const names = [];
 	const secondPromises = [];
@@ -96,7 +97,7 @@ function _ExtendPromise( config, target, options ) {
 
 		secondConfig = config._getConfig( extendConfigs, name );
 
-		second = secondConfig.getSecond( resolvedOptions, name, target );
+		second = optionsConfig.newConfig( secondConfig ).getSecond( resolvedOptions, name, target );
 
 		names.push( name );
 
@@ -105,15 +106,15 @@ function _ExtendPromise( config, target, options ) {
 		secondConfigs.push( secondConfig );
 	}
 
-	config._extendDecoratorsConfig( target, options );
+	optionsConfig._extendDecoratorsConfig( target, options );
 
 	return (
 		Promise
 			.all( secondPromises )
-			.then( results => _extend( results, config, target, options, names, secondConfigs ) )
+			.then( results => _extend( results, config, optionsConfig, target, options, names, secondConfigs ) )
 	);
 }
-function _extend( results, config, target, options, names, secondConfigs ) {
+function _extend( results, config, optionsConfig, target, options, names, secondConfigs ) {
 	var first, second, secondConfig, i;
 	var result, promises = [];
 
@@ -122,7 +123,7 @@ function _extend( results, config, target, options, names, secondConfigs ) {
 		secondConfig = secondConfigs[ i ];
 		second = results[ i ];
 
-		first = config.getFirst( target, name, options );
+		first = optionsConfig.getFirst( target, name, options );
 
 		result = secondConfig.extendProp( first, second, name, target, options );
 

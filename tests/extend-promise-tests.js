@@ -10,12 +10,12 @@ const TestHelpers = require( './test-helpers' );
 /* --------------------------------- Test Helpers --------------------------------- */
 
 const deep = { deep: true };
-const deepExtend = Extend.decorator( deep );
+const deepExtend = Extend.decorator({ config: deep });
 
 function getter( option, target, options, name ) {
 	return option.call( this, options, target, name )
 }
-const getterDecorator = Extend.decorator( getter );
+const getterDecorator = Extend.decorator({ func: getter });
 
 
 /* --------------------------------- Extend.promise Tests --------------------------------- */

@@ -20,14 +20,18 @@ const Decorators = {
 		/**
 		 * Property function will be executed to get result
 		 */
-		getter( option, target, options, name ) {
-			return option.call( this, target, options, name );
+		getter: {
+			func( option, target, options, name ) {
+				return option.call( this, target, options, name );
+			},
 		},
 
 		/**
 		 * Property will be skipped by extend
 		 */
-		skip( option, target, options, name ) { return undefined },
+		skip: {
+			func( option, target, options, name ) { return undefined },
+		},
 
 
 		/* ------------ Decorator-Configs ------------- */
@@ -38,11 +42,69 @@ const Decorators = {
 		 * See extend-decorator-tests for examlpe
 		 */
 
-		deep: { deep: true },
+		deep: {
+			config: { deep: true },
+		},
 
-		concat: { Array: ( first, second, name ) => first.concat( second ) },
+		concat: {
+			config: { Array: ( first, second, name ) => first.concat( second ) },
+		},
 
-		concatReverse: { Array: ( first, second, name ) => second.concat( first ) },
+		concatReverse: {
+			config: { Array: ( first, second, name ) => second.concat( first ) },
+		},
+
+
+		/* ------------ Decorator-Functions with arguments ------------- */
+
+		dependsOn( /*prop1, prop2, ...*/ ) {
+			const dependsOnProps = Array.prototype.slice.call( arguments );
+
+			return {
+				configExtension: {
+					name: 'dependsOn',
+
+					initCtx() {
+						const extCtx = {};
+
+						Object.defineProperty( extCtx, '_getDependsOnProps', {
+							value() {
+								const props = Object.keys( this );
+
+								return props.sort( ( a, b ) => ~this[ a ].indexOf( b ) ? 1 : 0 );
+							}
+						});
+
+						return extCtx;
+					},
+
+					updateCtx( extCtx, target, name, descriptor ) {
+						// const oldDependsOnProps = extCtx.dependsOnProps;
+						extCtx[ name ] = dependsOnProps;
+					},
+
+					getConfig( extCtx ) {
+						return {
+							getProps( options, target ) {
+								const props = this.applyOrigin( arguments );
+
+								const dependsOnProps = extCtx._getDependsOnProps();
+								var i, index, propsToAdd = [];
+
+								for ( i = 0; i < dependsOnProps.length; ++i ) {
+									if ( ~( index = props.indexOf( dependsOnProps[ i ] ) ) ) {
+										propsToAdd.push( dependsOnProps[ i ] );
+										props.splice( index, 1 );
+									}
+								}
+
+								return props.concat( propsToAdd );
+							}
+						};
+					},
+				},
+			};
+		},
 	};
 
 

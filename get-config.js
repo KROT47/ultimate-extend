@@ -752,7 +752,7 @@ Object.defineProperties( DefaultConfigPrototype, {
 	 */
 	_resolveOptions: {
 		value( target, options ) {
-			const final = [ options ];
+			const final = [ options, this ];
 
 			if ( !this.resolve ) return final;
 
@@ -760,7 +760,19 @@ Object.defineProperties( DefaultConfigPrototype, {
 
 			if ( !decConfig ) return final;
 
-			final.push( decConfig );
+			var optionsConfig = this;
+			if ( decConfig.configExtensions ) {
+				var extension, i;
+				for ( i in decConfig.configExtensions ) {
+					extension = decConfig.configExtensions[ i ];
+
+					optionsConfig =
+						optionsConfig.newPrimary( extension.getConfig( extension.extCtx ) );
+				}
+			}
+
+			final.pop();
+			final.push( optionsConfig, decConfig );
 
 			const propDecorators = decConfig.decorators;
 			const extendConfigs = decConfig.configs;
@@ -771,9 +783,16 @@ Object.defineProperties( DefaultConfigPrototype, {
 
 			const resolvedOptions = final[ 0 ] = Helpers.fullClone( options );
 
-			var name, i, decFuncs, result;
+			var name, i, k, decFuncs, result;
 
-			for ( name in propDecorators ) {
+			const props =
+					optionsConfig
+						.getProps( options, target )
+						.filter( prop => propDecorators[ prop ] );
+
+			for ( k = 0; k < props.length; ++k ) {
+				name = props[ k ];
+
 				if ( decFuncs = propDecorators[ name ] ) {
 					result = resolvedOptions[ name ];
 

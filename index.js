@@ -76,9 +76,10 @@ function _Extend( config, target, options ) {
 
 	options = Helpers.valueOf( options );
 
-	const [ resolvedOptions, decConfig, extendConfigs ] = config._resolveOptions( target, options );
+	const [ resolvedOptions, optionsConfig, decConfig, extendConfigs ] =
+			config._resolveOptions( target, options );
 
-	const props = config.__getProps( resolvedOptions, target, decConfig );
+	const props = optionsConfig.__getProps( resolvedOptions, target, decConfig );
 
 	var first, second, name, secondConfig, i, result;
 
@@ -87,14 +88,14 @@ function _Extend( config, target, options ) {
 
 		secondConfig = config._getConfig( extendConfigs, name );
 
-		first = config.getFirst( target, name, options );
+		first = optionsConfig.getFirst( target, name, options );
 
-		second = secondConfig.getSecond( resolvedOptions, name, target );
+		second = optionsConfig.newConfig( secondConfig ).getSecond( resolvedOptions, name, target );
 
 		result = secondConfig.extendProp( first, second, name, target, options );
 
 		if ( result !== undefined ) target[ name ] = result;
 	}
 
-	config._extendDecoratorsConfig( target, options );
+	optionsConfig._extendDecoratorsConfig( target, options );
 }

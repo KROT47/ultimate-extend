@@ -29,47 +29,74 @@ const DecoratorsConfigPropName = '__decoratorsConfig';
 /**
  * Returns property decorator to use some extend config over this property
  * @param (Object|Function|Array{Object|Function}) decorators
- * @param (Object?) config - special decorator config
  * @return (Function)
  */
-function ExtendDecorator( decorators, config ) {
+function ExtendDecorator( decorators ) {
 	return function ( target, name, descriptor ) {
-		SetupDecoratorsConfig( target, name, descriptor, decorators, config );
+		return SetupDecoratorsConfig( arguments, decorators );
 	};
 }
 
 /**
  * Adds or updates decorators config
- * @param (Object|Array|Function) target
- * @param (String|Number) name
- * @param (Object) descriptor
+ * @param (Arguments) args
+ * @param (Object|Function|Array{Object|Function}) decorators
+ * @param (Object?) config - special decorator config
+ * @return (Object|Function?)
  */
-function SetupDecoratorsConfig( target, name, descriptor, decorators, decoratorConfig ) {
+function SetupDecoratorsConfig( args, decorators ) {
+	if ( typeof decorators === 'function' ) {
+		return function ( target, name, descriptor ) {
+			decorators = decorators.apply( null, args );
+
+			return SetupDecoratorsConfig( arguments, decorators );
+		};
+	}
+
+	const [ target, name, descriptor ] = args;
+
 	const decConfig = GetConfig( target, true );
 
-	var config;
+	var config, prop, i;
 
 	if ( !Array.isArray( decorators ) ) decorators = [ decorators ];
 
-	for ( var i = 0; i < decorators.length; ++i ) {
-		config = decorators[ i ];
+	for ( i = 0; i < decorators.length; ++i ) {
+		for ( prop in decorators[ i ] ) {
+			config = decorators[ i ][ prop ];
 
-		switch ( typeof config ) {
-			case 'function':
-				decConfig.decorators = decConfig.decorators || {};
+			switch ( prop ) {
+				case 'func':
+					decConfig.decorators = decConfig.decorators || {};
 
-				decConfig.decorators[ name ] =
-					Helpers.arrayPush( decConfig.decorators[ name ], config );
-			break;
+					decConfig.decorators[ name ] =
+						Helpers.arrayPush( decConfig.decorators[ name ], config );
+				break;
 
-			case 'object':
-				decConfig.configs = decConfig.configs || {};
+				case 'config':
+					decConfig.configs = decConfig.configs || {};
 
-				// two methods with same names
-				// will be combined to execute one by one to get final result
-				decConfig.configs[ name ] =
-					Extend( getMergeMethodsConfig(), decConfig.configs[ name ] || {}, config );
-			break;
+					// two methods with same names
+					// will be combined to execute one by one to get final result
+					decConfig.configs[ name ] =
+						Extend( getMergeMethodsConfig(), decConfig.configs[ name ] || {}, config );
+				break;
+
+				case 'configExtension':
+					decConfig.configExtensions = decConfig.configExtensions || {};
+
+					if ( !decConfig.configExtensions[ config.name ] ) {
+						decConfig.configExtensions[ config.name ] = {
+							extCtx: config.initCtx(),
+							getConfig: config.getConfig
+						};
+					}
+
+					const extCtx = decConfig.configExtensions[ config.name ].extCtx;
+
+					config.updateCtx( extCtx, target, name, descriptor );
+				break;
+			}
 		}
 	}
 
@@ -81,10 +108,13 @@ function SetupDecoratorsConfig( target, name, descriptor, decorators, decoratorC
 		baseGet = descriptor.get;
 		baseSet = descriptor.set;
 	} else {
-		const baseValue = descriptor.value;
+		if ( descriptor.initializer ) {
+			baseGet = descriptor.initializer;
+		} else {
+			baseGet = function () { return descriptor.value };
+		}
 
-		baseGet = function () { return baseValue };
-		baseSet = function ( value ) { this[ name ] = value };
+		baseSet = function ( value ) { Object.defineProperty( this, name, getDescr({ value }) ) };
 	}
 
 	const newDescriptor = {
@@ -109,6 +139,14 @@ function SetupDecoratorsConfig( target, name, descriptor, decorators, decoratorC
 		},
 		configs: {
 			b: { deep: true }
+		},
+		configExtensions: {
+			dependsOn: {
+				extCtx: {
+					b: [ 'a', 'c' ]
+				},
+				getConfig: function( extCtx ) { ... }
+			},
 		},
 	}*/
 }
@@ -152,7 +190,7 @@ function GetConfig( target, forceCreate ) {
  */
 function SetConfig( target, decoratorsConfig ) {
 	Object.defineProperty( target, DecoratorsConfigPropName, {
-		value: decoratorsConfig,
+		value: Extend.descriptors( true, {}, decoratorsConfig ),
 		configurable: true
 	});
 }
@@ -166,20 +204,38 @@ function UpdateConfig( target, options ) {
 	const targetConfig = GetConfig( target );
 	const optionsConfig = GetConfig( options );
 
-	if ( !optionsConfig ) return;
-
 	if ( !targetConfig ) return optionsConfig && SetConfig( target, optionsConfig );
 
 	updateConfig( options, optionsConfig, targetConfig, 'decorators' );
 	updateConfig( options, optionsConfig, targetConfig, 'configs' );
+
+	UpdateConfigExtensions( options, targetConfig, optionsConfig );
+}
+function UpdateConfigExtensions( options, targetConfig, optionsConfig ) {
+	const targetConfigExtensions = targetConfig.configExtensions;
+	const optionsConfigExtensions = optionsConfig && optionsConfig.configExtensions;
+
+	if ( !targetConfigExtensions ) {
+		if ( optionsConfigExtensions ) {
+			targetConfig.configExtensions = Extend.descriptors( true, {}, optionsConfigExtensions );
+		}
+		return;
+	}
+
+	var oce, tce, i;
+	for ( i in targetConfigExtensions ) {
+		oce = optionsConfigExtensions && optionsConfigExtensions[ i ];
+		tce = targetConfigExtensions[ i ];
+		updateConfig( options, oce, tce, 'extCtx' );
+	}
 }
 function updateConfig( options, optionsConfig, config, name ) {
 	if ( config[ name ] && Object.keys( config[ name ] ).length ) {
-		if ( _updateConfig( options, config[ name ], optionsConfig[ name ] ) ) {
+		if ( _updateConfig( options, config[ name ], optionsConfig && optionsConfig[ name ] ) ) {
 			delete config[ name ];
 		}
-	} else if ( optionsConfig[ name ] ) {
-		config[ name ] = optionsConfig[ name ];
+	} else if ( optionsConfig && optionsConfig[ name ] ) {
+		config[ name ] = Extend.descriptors( true, {}, optionsConfig[ name ] );
 	}
 }
 function _updateConfig( options, conf1, conf2 ) {
@@ -233,3 +289,13 @@ function getMergeMethodsConfig() {
 	return MergeMethodsConfig;
 }
 var MergeMethodsConfig;
+
+function getDescr( descr ) {
+	const newDescr = {};
+
+	if ( !descr.get && !descr.set ) newDescr.writable = true;
+
+	return Object.assign( newDescr, BaseDescr, descr );
+}
+
+const BaseDescr = { configurable: true, enumerable: true };
