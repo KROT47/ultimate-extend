@@ -1,6 +1,6 @@
 {
   "name": "ultimate-extend",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "description": "Ultimately configurable extend function can be used as always or in any other way you need. Even in objects deep promise iterations.",
   "main": "index.js",
   "scripts": {
