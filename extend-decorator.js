@@ -53,7 +53,7 @@ function SetupDecoratorsConfig( args, decorators ) {
 		};
 	}
 
-	const [ target, name, descriptor ] = args;
+	const [ target, name, descriptor ] = Array.prototype.slice.call( args );
 
 	const decConfig = GetConfig( target, true );
 
