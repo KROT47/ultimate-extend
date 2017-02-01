@@ -424,6 +424,34 @@ module.exports = ({ assert, log, error }) => ({
 
 			this.run( config, target, a, b, expecting );
 		}
+	}, {
+		/* ------------ 17 ------------- */
+
+		test( testIndex ) {
+			var a = { a: { a: '1' } };
+
+			var b = { a: [ 1, 2 ] };
+
+			var expecting = {
+			    result: { a: { a: '1', 1: 1, 2: 2 } }
+			};
+
+			var config = Extend.config({
+				deep: true,
+
+				ObjectArray( first, second, name ) {
+					const obj = {};
+
+					for ( var i = 0; i < second.length; ++i ) obj[ second[ i ] ] = second[ i ];
+
+					return this.applyMethod( 'extendProp', arguments, {
+						1: obj
+					});
+				}
+			});
+
+			this.run( config, {}, a, b, expecting );
+		}
 	}],
 
 	run( config, target, a, b, expecting, func ) {

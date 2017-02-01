@@ -13,7 +13,7 @@ new Tests({
 		// only: [ 'Extend' ],
 		// only: [ 'Extend.plugins' ],
 		// only: [ 'Extend.promise' ],
-		only: [ 'Extend.decorator' ],
+		// only: [ 'Extend.decorator' ],
 		// except: [ 'Extend.decorator' ],
 		// except: [],
 		// except: [ 'Extend.promise' ],
@@ -27,8 +27,8 @@ new Tests({
 		},
 
 		logs: {
-			// level: 0
-			level: 2
+			level: 0
+			// level: 2
 		}
 	},
 
