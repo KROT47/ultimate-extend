@@ -52,8 +52,13 @@ function ExtendPromiseUnbinded( target ) {
 // Extends target with each options object
 function ExtendPromiseStart( config, target, i, args ) {
 	if ( target instanceof Promise ) {
+		const args = Array.prototype.slice.call( arguments );
+
 		return (
-			target.then( target => ExtendPromiseStart.apply( null, arguments ) )
+			target.then( target => {
+				args.splice( 1, 1, target );
+				return ExtendPromiseStart.apply( null, args );
+			})
 		);
 	};
 

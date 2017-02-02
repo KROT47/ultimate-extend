@@ -29,29 +29,35 @@ module.exports = ({ assert, log, error }) => ({
 		test( testIndex ) {
 			var config = Extend.config({ deep: true });
 
+			var target = getPromiseFor( {}, 300 );
+
 			var a = { a: { a: '1' } };
 
-			var b = new Promise( res => res( {
-				a: new Promise( res => res( {
-					b: new Promise( res => setTimeout( () => res( {
-						c: new Promise( res => setTimeout( () => res( {
-							d: new Promise( res => setTimeout( () => res( {
-								e: new Promise( res => setTimeout( () => res( {
-									f: new Promise( res => setTimeout( () => res( {
-										g: new Promise( res => setTimeout( () => res( 30 ), 200 ) )
-									} ), 200 ) )
-								} ), 200 ) )
-							} ), 200 ) )
-						} ), 200 ) )
-					} ), 200 ) )
-				} ) )
-			} ) );
+			var b = getPromiseFor({
+				a: getPromiseFor({
+					b: getPromiseFor({
+						c: getPromiseFor({
+							d: getPromiseFor({
+								e: getPromiseFor({
+									f: getPromiseFor({
+										g: getPromiseFor( 30 )
+									}),
+								}),
+							}),
+						}),
+					}),
+				}),
+			});
 
 			var expecting = {
 				result: { a: { a: '1', b: { c: { d: { e: { f: { g: 30 } } } } } } }
 			};
 
 			return this.run( config, {}, a, b, expecting );
+
+			function getPromiseFor( value, delay ) {
+				return new Promise( res => setTimeout( () => res( value ), delay || 200 ) );
+			}
 		},
 	}, {
 		/* ------------ 2 ------------- */
