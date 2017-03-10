@@ -45,7 +45,6 @@ const DefaultConfigObject = {
 			for ( var i in options ) props.push( i );
 
 			return props;
-			// return Object.keys( options );
 		},
 
 		/**
@@ -83,11 +82,9 @@ const DefaultConfigObject = {
 			const firstType = this.helpers.getType( first );
 			const secondType = this.helpers.getType( second );
 			const extendMethodName =
-					firstType === secondType ?
-						[ secondType, 'Default' ] :
-						[ `${firstType}${secondType}`, 'extendDifferent'];
+					firstType === secondType ? secondType : `${firstType}${secondType}`;
 
-			return this.applyMethod( extendMethodName, arguments );
+			return this.applyMethod( [ extendMethodName, 'Default' ], arguments );
 		},
 
 		/**
@@ -98,7 +95,7 @@ const DefaultConfigObject = {
 		 * @param (String|Number) name - current extending property name
 		 * @return (Mixed)
 		 */
-		extendDifferent( first, second, name, target, options ) {
+		Default( first, second, name, target, options ) {
 			switch ( typeof second ) {
 				case 'undefined': return first;
 
@@ -116,7 +113,7 @@ const DefaultConfigObject = {
 		/* --------------------------------- Extend Similar --------------------------------- */
 
 		// handlers to define new property if object properties types are similar
-		// @see extendDifferent for arguments description
+		// @see Default for arguments description
 		// Array and Object will be extended too if config.deep is true
 		Object( first, second, name, target, options ) {
 			return (
@@ -134,11 +131,6 @@ const DefaultConfigObject = {
 			);
 		},
 
-		/* --------------------------------- Extend Default --------------------------------- */
-
-		// By default first will be replaced with second
-		Default: ( first, second, name, target, options ) => second,
-
 
 		/* --------------------------------- Ending --------------------------------- */
 
@@ -151,12 +143,6 @@ const DefaultConfigObject = {
 		 * Main Extend function
 		 */
 		Extend: () => Helpers.undefinedMethod( 'Extend' ),
-
-		/**
-		 * Max recursions count
-		 * @type (Number)
-		 */
-		maxRecursions: 20,
 	};
 
 /**
@@ -179,101 +165,47 @@ Object.defineProperties( DefaultConfigPrototype, {
 	/* --------------------------------- Public --------------------------------- */
 
 	/**
-	 * Writes value to config data store by name to use it through all execution
-	 * @param (String) name
-	 * @param (Mixed) value
-	 */
-	// set: {
-	// 	value( name, value ) {
-	// 		if ( value === undefined ) {
-	// 			delete this.__storage[ name ];
-	// 			return;
-	// 		}
-
-	// 		this.__storage[ name ] = value;
-	// 	},
-	// 	enumerable: true
-	// },
-
-	/**
-	 * Updates value in config data store by name using function
-	 * @param (String) name
-	 * @param (Function) func - current value will be passed as argument
-	 */
-	// update: {
-	// 	value( name, func ) { this.set( name, func( this.get( name ) ) ) },
-	// 	enumerable: true
-	// },
-
-	/**
-	 * Returns value from config data store by name
-	 * @param (String) name
-	 * @return (Mixed)
-	 */
-	// get: {
-	// 	value( name ) { return this.__storage[ name ] },
-	// 	enumerable: true
-	// },
-
-	/**
 	 * All helpers available
 	 * @type (Object)
 	 */
-	helpers: {
-		value: Helpers,
-		enumerable: true
-	},
+	helpers: Enumerable({ value: Helpers }),
 
 	/**
 	 * Returns current extend level ( useful if deep is true )
 	 * @return (Object|false)
 	 */
-	level: {
+	level: Enumerable({
 		get() { return this.global.__level },
 		set( value ) { this.global.__level = value },
-		enumerable: true
-	},
-
-	/**
-	 * Link to UltimateExtend module
-	 * @type (Object)
-	 */
-	BaseExtend: {
-		value: Extend,
-		enumerable: true
-	},
+	}),
 
 	/**
 	 * Calls defined in config Extend using self as extendConfig
 	 * Arguments are same as for Extend method
 	 * @return (Mixed)
 	 */
-	extend: {
-		value() { return this.applyExtend( arguments ) },
-		enumerable: true
-	},
+	extend: Enumerable({ value() { return this.applyExtend( arguments ) } }),
 
 	/**
 	 * Applies defined in config Extend using self as extendConfig
 	 * @param (Array) args
 	 * @return (Mixed)
 	 */
-	applyExtend: {
+	applyExtend: Enumerable({
 		value( args ) {
 			args = Array.prototype.slice.call( args );
 			args.unshift( this );
 
 			return this.Extend.apply( this, args );
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Returns config property by name or first founded for array of names
 	 * @param (String|Array{String}) propName
 	 * @return (Mixed)
 	 */
-	getProp: {
+	getProp: Enumerable({
 		value( propName ) {
 			if ( Array.isArray( propName ) ) {
 				for ( var i = 0; i < propName.length; ++i ) {
@@ -292,16 +224,15 @@ Object.defineProperties( DefaultConfigPrototype, {
 			}
 
 			return this[ propName ];
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Returns config property descriptor by name or first founded for array of names
 	 * @param (String|Array{String}) propName
 	 * @return (Mixed)
 	 */
-	getPropDescriptor: {
+	getPropDescriptor: Enumerable({
 		value( propName ) {
 			if ( Array.isArray( propName ) ) {
 				for ( var i = 0; i < propName.length; ++i ) {
@@ -324,9 +255,8 @@ Object.defineProperties( DefaultConfigPrototype, {
 			while ( !owner.hasOwnProperty( propName ) ) owner = Object.getPrototypeOf( owner );
 
 			return Object.getOwnPropertyDescriptor( owner, propName );
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Executes config method using arguments as first argument
@@ -339,7 +269,7 @@ Object.defineProperties( DefaultConfigPrototype, {
 	 * 		});
 	 * }
 	 */
-	applyMethod: {
+	applyMethod: Enumerable({
 		value( methodName, args, replacements ) {
 			const method = this.getProp( methodName );
 
@@ -348,9 +278,8 @@ Object.defineProperties( DefaultConfigPrototype, {
 			}
 
 			return method.apply( this, args );
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Same as callOrigin but as first argument receives all arguments for callOrigin
@@ -358,19 +287,18 @@ Object.defineProperties( DefaultConfigPrototype, {
 	 * @param (Object|Array) replacements - some replacements to args by index
 	 * @return (Mixed)
 	 */
-	applyOrigin: {
+	applyOrigin: Enumerable({
 		value( args, replacements ) {
 			return this.applyMethod( 'callOrigin', args, replacements );
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Launches method with same name from parent config
 	 * Arguments can differ from method to method, see DefaultConfig methods
 	 * @return (Mixed)
 	 */
-	callOrigin: {
+	callOrigin: Enumerable({
 		value() {
 			const originConfig = this.getOrigin();
 			const originPropDescr =
@@ -392,102 +320,87 @@ Object.defineProperties( DefaultConfigPrototype, {
 			}
 
 			return result;
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Returns new static config produced from this one
 	 * @param (Object) newConfig
 	 * @return (Object)
 	 */
-	newConfig: {
-		value( newConfig ) { return this._newConfig( newConfig ) },
-		enumerable: true
-	},
+	newConfig: Enumerable({ value( newConfig ) { return this._newConfig( newConfig ) } }),
 
 	/**
 	 * Returns new primary config produced from this one
 	 * @param (Object) newConfig
 	 * @return (Object)
 	 */
-	newPrimary: {
-		value( newConfig ) { return this._newConfig( newConfig, 'Primary' ) },
-		enumerable: true
-	},
+	newPrimary: Enumerable({ value( newConfig ) { return this._newConfig( newConfig, 'Primary' ) } }),
 
 	/**
 	 * Returns new base config produced from this one
 	 * @param (Object) newConfig
 	 * @return (Object)
 	 */
-	newBase: {
-		value( newConfig ) { return this._newConfig( newConfig, 'Base' ) },
-		enumerable: true
-	},
+	newBase: Enumerable({ value( newConfig ) { return this._newConfig( newConfig, 'Base' ) } }),
 
 	/**
 	 * Returns origin extendConfig where extendMethodName is defined
 	 * @param (String|Array?) extendMethodName - currently executing extendMethodName by default
 	 * @return (Object)
 	 */
-	getOrigin: {
-		value( extendMethodName ) { return this.getCurrent()._parent },
-		enumerable: true
-	},
+	getOrigin: Enumerable({ value( extendMethodName ) { return this.getCurrent()._parent } }),
 
 	/**
 	 * Returns origin extendConfig where extendMethodName is defined
 	 * @param (String|Array?) extendMethodName - currently executing extendMethodName by default
 	 * @return (Object)
 	 */
-	getCurrent: {
+	getCurrent: Enumerable({
 		value( extendMethodName ) {
 			return (
 				this._currentMethod ?
 					this._currentMethod._extendConfig :
 					this.getClosest( 'Primary' )
 			);
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Returns self or closest non-final config
 	 * @return (Object)
 	 */
-	getNonFinal: {
-		value() { return this.has( 'Final' ) ? this._parent.getNonFinal() : this },
-		enumerable: true
-	},
+	getNonFinal: Enumerable({
+		value() { return this.has( 'Final' ) ? this._parent.getNonFinal() : this }
+	}),
 
 	/**
 	 * Returns self or closest config of some type
 	 * @return (Object)
 	 */
-	getDefault: { 	value() { return this.getConfig( 'Default' ) }, enumerable: true },
-	getBase: { 		value() { return this.getConfig( 'Base' ) }, enumerable: true },
-	getStatic: { 	value() { return this.getConfig( 'Static' ) }, enumerable: true },
-	getPrimary: { 	value() { return this.getConfig( 'Primary' ) }, enumerable: true },
-	getFinal: { 	value() { return this.getConfig( 'Final' ) }, enumerable: true },
+	getDefault: Enumerable({ value() { return this.getConfig( 'Default' ) } }),
+	getBase: 	Enumerable({ value() { return this.getConfig( 'Base' ) } }),
+	getStatic: 	Enumerable({ value() { return this.getConfig( 'Static' ) } }),
+	getPrimary: Enumerable({ value() { return this.getConfig( 'Primary' ) } }),
+	getFinal: 	Enumerable({ value() { return this.getConfig( 'Final' ) } }),
 
 
 	/**
 	 * Tells if this config is of some type
 	 * @return (Boolean)
 	 */
-	isDefault: { 	get() { return this.is( 'Default' ) }, enumerable: true },
-	isBase: { 		get() { return this.is( 'Base' ) }, enumerable: true },
-	isStatic: { 	get() { return this.is( 'Static' ) }, enumerable: true },
-	isPrimary: { 	get() { return this.is( 'Primary' ) }, enumerable: true },
-	isFinal: { 		get() { return this.is( 'Final' ) }, enumerable: true },
+	isDefault: 	Enumerable({ get() { return this.is( 'Default' ) } }),
+	isBase: 	Enumerable({ get() { return this.is( 'Base' ) } }),
+	isStatic: 	Enumerable({ get() { return this.is( 'Static' ) } }),
+	isPrimary: 	Enumerable({ get() { return this.is( 'Primary' ) } }),
+	isFinal: 	Enumerable({ get() { return this.is( 'Final' ) } }),
 
 	/**
 	 * Returns closest config by type ( goes from top to deep prototype )
 	 * @param (String) configType
 	 * @return (Object|undefined)
 	 */
-	getClosest: {
+	getClosest: Enumerable({
 		value( configType ) {
 			var config = this.getConfig( configType );
 
@@ -501,16 +414,15 @@ Object.defineProperties( DefaultConfigPrototype, {
 			}
 
 			return config;
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Returns config by type
 	 * @param (String) configType
 	 * @return (Object|undefined)
 	 */
-	getConfig: {
+	getConfig: Enumerable({
 		value( configType ) {
 			if ( !this.has( configType ) ) return;
 
@@ -519,48 +431,37 @@ Object.defineProperties( DefaultConfigPrototype, {
 			while ( !config.is( configType ) ) config = config._parent;
 
 			return config;
-		},
-		enumerable: true
-	},
+		}
+	}),
 
 	/**
 	 * Tells if config has some type
 	 * @param (String) configType
 	 * @return (Boolean)
 	 */
-	has: {
-		value( configType ) { return this[ getTypeProp( configType ) ] },
-		enumerable: true
-	},
+	has: Enumerable({ value( configType ) { return this[ getTypeProp( configType ) ] } }),
 
 	/**
 	 * Tells if config is of some type
 	 * @param (String) configType
 	 * @return (Boolean)
 	 */
-	is: {
-		value( configType ) { return this.hasOwnProperty( getTypeProp( configType ) ) },
-		enumerable: true
-	},
+	is: Enumerable({
+		value( configType ) { return this.hasOwnProperty( getTypeProp( configType ) ) }
+	}),
 
 	/**
 	 * Returns config type
 	 * @return (String)
 	 */
-	configType: {
-		get() { return this[ TypeProp ] },
-		enumerable: true
-	},
+	configType: Enumerable({ get() { return this[ TypeProp ] } }),
 
 	/**
 	 * Tells if some object is extend config object
 	 * @param (Mixed) obj
 	 * @return (Boolean)
 	 */
-	isConfig: {
-		value( obj ) { return IsExtendConfigObject( obj ) },
-		enumerable: true
-	},
+	isConfig: Enumerable({ value( obj ) { return IsExtendConfigObject( obj ) } }),
 
 
 	/* --------------------------------- Private --------------------------------- */
@@ -1050,6 +951,19 @@ function isExtendConfigGetter( propName, value ) {
  * @return (String)
  */
 function getTypeProp( configType ) { return `__is${configType}Config` }
+
+/**
+ * Adds enumerable property to descriptor object
+ * @param (Object) descr
+ * @return (Object)
+ */
+function Enumerable( descr ) {
+	descr.enumerable = true;
+	return descr;
+}
+
+
+/* --------------------------------- Config Helpers --------------------------------- */
 
 /**
  * Returns full clone of config prototypes chain with same type

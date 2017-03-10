@@ -82,7 +82,7 @@ var config = Extend.config({
     }
     
     // executes when first and second properties have different types
-    // extendDifferent: ( first, second, config, name ) => { return newTargetProp }
+    // Default( first, second, config, name ) { return newTargetProp }
 
     // returns parent config object ( can not be overwritten )
     // getParentConfig()
@@ -128,11 +128,9 @@ Extend.promise( true, target, a, b )
 var Extend = require( 'ultimate-extend' );
 
 var config = Extend.config({
-    extendSimilar: {
-        Array: ( first, second ) => first.concat( second )
-    },
+    Array: ( first, second ) => first.concat( second ),
 
-    extendDifferent: ( first, second, config, name ) => {
+    Default( first, second, config, name ) {
         if ( !first ) return config.callOrigin( first, second, config, name );
 
         if ( !Array.isArray( first ) ) first = [ first ];
@@ -158,13 +156,13 @@ Extend.outer( config, a, b )                                  => [ 0, 1, 2 ]
 var Extend = require( 'ultimate-extend' );
 
 var config = Extend.config({
-    extendDifferent: ( first, second, config, name ) => {
+    Default: ( first, second, config, name ) => {
         return second + 1;
     }
 });
 
 var newConfig = config.newConfig({
-    extendDifferent: ( first, second, config, name ) => {
+    Default: ( first, second, config, name ) => {
         return config.callOrigin( first, second, config, name ) + 2;
     }
 });

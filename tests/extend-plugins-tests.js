@@ -32,7 +32,7 @@ module.exports = ({ assert, log, error }) => ({
 			var b = [ 4, 5 ];
 
 			var expecting = {
-			    result: [ 0, 1, 2, 3, 4, 5 ]
+			    getResult() { return [ 0, 1, 2, 3, 4, 5 ] },
 			};
 
 			this.run( config, target, a, b, expecting, {
@@ -50,7 +50,7 @@ module.exports = ({ assert, log, error }) => ({
 			var b = [ 4, 5 ];
 
 			var expecting = {
-			    result: [ 4, 5 ]
+			    getResult() { return [ 4, 5 ] },
 			};
 
 			this.run( false, target, a, b, expecting, {
@@ -78,7 +78,7 @@ module.exports = ({ assert, log, error }) => ({
 			var b = { a: { a: { a: 2 } } };
 
 			var expecting = {
-			    result: { level: 0, a: { level: 1, a: { level: 2, a: 2 } } }
+			    getResult() { return { level: 0, a: { level: 1, a: { level: 2, a: 2 } } } },
 			};
 
 			this.run( config, target, a, b, expecting, {
@@ -97,7 +97,7 @@ module.exports = ({ assert, log, error }) => ({
 			var b = { a: { a: 2 } };
 
 			var expecting = {
-			    result: { a: { a: 2 } }
+			    getResult() { return { a: { a: 2 } } },
 			};
 
 			this.run( false, target, a, b, expecting, {
@@ -138,7 +138,7 @@ module.exports = ({ assert, log, error }) => ({
 			var b = { a: 2 };
 
 			var expecting = {
-			    result: { a: 1, a: 2 }
+			    getResult() { return { a: 1, a: 2 } },
 			};
 
 			this.run( config, target, a, b, expecting, {
@@ -147,6 +147,46 @@ module.exports = ({ assert, log, error }) => ({
 		}
 	}, {
 		/* ------------ 6 ------------- */
+
+		info: 'Check function extension',
+
+		test( testIndex ) {
+
+			var result = {};
+
+			var config = Extend.config({
+				Function( first, second, name ) {
+					result.func = function () {
+						arguments[ 0 ] = first.apply( this, arguments );
+
+						return second.apply( this, arguments );
+					};
+
+					return result.func;
+				}
+			});
+
+			function before( a ) { return a - 1 };
+
+			function method( a ) { return a * 5 };
+
+			function after( a ) { return a + 10 };
+
+			var expecting = {
+				a: method,
+				b: after,
+				getResult() { return result.func },
+			};
+
+			this.run( config, before, method, after, expecting, {
+				extend: Extend.outer,
+				after( resultFunc ) {
+					if ( resultFunc( 2 ) !== 15 ) error( 'Resulting function is incorrect' );
+				}
+			});
+		}
+	}, {
+		/* ------------ 7 ------------- */
 
 		info: 'Extend descriptors',
 
@@ -187,17 +227,19 @@ module.exports = ({ assert, log, error }) => ({
 			};
 
 			var expecting = {
-			    result: {
-					a: Object.create( Object.prototype, {
-						a: bProps.a,
+			    getResult() {
+			    	return {
+						a: Object.create( Object.prototype, {
+							a: bProps.a,
 
-						b: bProps.b,
+							b: bProps.b,
 
-						c: bProps.c,
+							c: bProps.c,
 
-						d: bProps.d,
-					}),
-				}
+							d: bProps.d,
+						}),
+					}
+				},
 			};
 
 			this.run( true, target, a, b, expecting, {
@@ -206,7 +248,7 @@ module.exports = ({ assert, log, error }) => ({
 			});
 		}
 	}, {
-		/* ------------ 7 ------------- */
+		/* ------------ 8 ------------- */
 
 		info: 'Extend descriptors complex',
 
@@ -262,17 +304,19 @@ module.exports = ({ assert, log, error }) => ({
 			});
 
 			var expecting = {
-			    result: {
-					a: Object.create( Object.prototype, {
-						getter: aProps.getter,
+			    getResult() {
+			    	return {
+						a: Object.create( Object.prototype, {
+							getter: aProps.getter,
 
-						func: getDescr({ value: getNewFunc() }),
+							func: getDescr({ value: getNewFunc() }),
 
-						obj: getDescr({ value: { a: 1, level: 1 } }),
+							obj: getDescr({ value: { a: 1, level: 1 } }),
 
-						level: getDescr({ value: 0 }),
-					}),
-				}
+							level: getDescr({ value: 0 }),
+						}),
+					}
+				},
 			};
 
 			this.run( config, target, a, b, expecting, {
@@ -295,8 +339,8 @@ module.exports = ({ assert, log, error }) => ({
 		testConfig = Helpers.extendAll( {}, testDefaultConfig, testConfig );
 
 		// a and b must not change
-		expecting.a = expecting.a || Helpers.extendAll( {}, a );
-		expecting.b = expecting.b || Helpers.extendAll( {}, b );
+		expecting.a = expecting.a || ( typeof a === 'object' ? Helpers.extendAll( {}, a ) : a );
+		expecting.b = expecting.b || ( typeof b === 'object' ? Helpers.extendAll( {}, b ) : b );
 
 
 		/* ------------ a ------------- */
@@ -326,13 +370,15 @@ module.exports = ({ assert, log, error }) => ({
 
     	result = TestHelpers.valueOf( result );
 
+    	const expectingResult = expecting.getResult();
+
 		log( '--- result ---' );
-		log( 'expecting', TestHelpers.valueOf( expecting.result ) );
+		log( 'expecting', TestHelpers.valueOf( expectingResult ) );
 		log( 'real     ', TestHelpers.valueOf( result ) );
 
 		if ( typeof testConfig.after === 'function' ) testConfig.after( result );
 
-		assert( testConfig.assert( result, expecting.result ), `result is incorrect` );
+		assert( testConfig.assert( result, expectingResult ), `result is incorrect` );
 	},
 
 });
