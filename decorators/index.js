@@ -84,6 +84,8 @@ const Decorators = {
 					},
 
 					getConfig( extCtx ) {
+                        if ( !extCtx ) return;
+
 						return {
 							getProps( options, target ) {
 								const props = this.applyOrigin( arguments );
